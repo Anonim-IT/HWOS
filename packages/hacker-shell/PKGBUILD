@@ -1,22 +1,20 @@
 # Maintainer: HWOS Team <dev@hwos.dev>
-# GitHub: https://github.com/hwos/hacker-shell
+# GitHub: https://github.com/Anonim-IT/hacker-shell
 pkgname=hacker-shell
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="Hacker Shell - Custom shell environment for Hacker Web OS"
 arch=('any')
-url="https://hwos.dev"
+url="https://github.com/Anonim-IT/hacker-shell"
 license=('GPL3')
 depends=('bash' 'zsh' 'fastfetch' 'hwos-scripts' 'hwos-configs')
 install=hacker-shell.install
-source=(
-  "src/hacker"
-  "configs/hwos-integration.sh"
-  "configs/hackerrc.default"
-)
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+source=("https://github.com/Anonim-IT/hacker-shell/archive/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
 
 package() {
+    cd "${srcdir}/hacker-shell-${pkgver}"
+
     install -Dm755 src/hacker "${pkgdir}/usr/bin/hacker"
 
     install -Dm644 configs/hwos-integration.sh \
@@ -28,7 +26,6 @@ package() {
     mkdir -p "${pkgdir}/etc/skel"
     cp configs/hackerrc.default "${pkgdir}/etc/skel/.hackerrc"
 
-    # Only add to shells if not already present
     if ! grep -q "^/usr/bin/hacker" "${pkgdir}/etc/shells" 2>/dev/null; then
         echo "/usr/bin/hacker" >> "${pkgdir}/etc/shells"
     fi
