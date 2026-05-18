@@ -1,0 +1,26 @@
+# Maintainer: HWOS Team <dev@hwos.dev>
+pkgname=hwos-scripts
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="HWOS system management scripts (encryption, firewall, update, help)"
+arch=('any')
+url="https://hwos.dev"
+license=('GPL3')
+depends=('bash' 'pacman' 'nftables' 'cryptsetup' 'curl' 'fastfetch')
+install=hwos-scripts.install
+source=(
+  "src/hwos-encrypt"
+  "src/hwos-firewall"
+  "src/hwos-update"
+  "src/hwos-setup-fastfetch"
+  "src/hwos-help"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm755 src/hwos-encrypt "${pkgdir}/usr/bin/hwos-encrypt"
+    install -Dm755 src/hwos-firewall "${pkgdir}/usr/bin/hwos-firewall"
+    install -Dm755 src/hwos-update "${pkgdir}/usr/bin/hwos-update"
+    install -Dm755 src/hwos-setup-fastfetch "${pkgdir}/usr/bin/hwos-setup-fastfetch"
+    install -Dm755 src/hwos-help "${pkgdir}/usr/bin/hwos-help"
+}

@@ -1,0 +1,11 @@
+post_install() {
+    echo "Hacker Shell v1.0.0 installed"
+    echo "Set as login shell: chsh -s /usr/bin/hacker"
+    echo ""
+    echo "Hacker Shell is available on GitHub:"
+    echo "  https://github.com/hwos/hacker-shell"
+}
+
+post_upgrade() {
+    echo "Hacker Shell updated"
+}

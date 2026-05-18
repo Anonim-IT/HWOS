@@ -1,0 +1,8 @@
+post_install() {
+    echo "HackerRUB v1.0.0 installed"
+    echo "Run: hackerrub-config (as root) to configure GRUB"
+}
+
+post_upgrade() {
+    echo "hackerrub updated"
+}

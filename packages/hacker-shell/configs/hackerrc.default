@@ -1,0 +1,20 @@
+# Hacker Shell User Configuration (~/.hackerrc)
+# This file is sourced by the Hacker Shell on startup
+
+# Custom aliases
+alias myip="curl -s ifconfig.me"
+alias ports="ss -tulanp"
+alias cpuinfo="lscpu"
+alias meminfo="free -h"
+alias diskinfo="lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT"
+
+# Custom PATH additions
+# export PATH="$PATH:$HOME/.local/bin"
+
+# Custom environment variables
+# export EDITOR=nvim
+# export BROWSER=firefox
+
+# Custom prompt customization
+# To customize the prompt, uncomment and modify:
+# export PS1='\u@\h:\w\$ '

@@ -1,0 +1,34 @@
+# Maintainer: HWOS Team <dev@hwos.dev>
+pkgname=hackerrub
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="HackerRUB - Custom GRUB theme and bootloader config for HWOS"
+arch=('any')
+url="https://hwos.dev"
+license=('GPL3')
+depends=('grub' 'bash')
+optdepends=('ttf-hack-nerd: custom boot font')
+install=hackerrub.install
+source=(
+  "grub-theme/theme.txt"
+  "grub-theme/background.png"
+  "grub-theme/logo.png"
+  "grub-theme/select_c.png"
+  "grub-theme/select_w.png"
+  "grub-theme/icons/"
+  "src/hackerrub-config"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm644 grub-theme/theme.txt "${pkgdir}/usr/share/hackerrub/theme/theme.txt"
+    install -Dm644 grub-theme/background.png "${pkgdir}/usr/share/hackerrub/theme/background.png" 2>/dev/null || true
+    install -Dm644 grub-theme/logo.png "${pkgdir}/usr/share/hackerrub/theme/logo.png" 2>/dev/null || true
+    install -Dm644 grub-theme/select_c.png "${pkgdir}/usr/share/hackerrub/theme/select_c.png" 2>/dev/null || true
+    install -Dm644 grub-theme/select_w.png "${pkgdir}/usr/share/hackerrub/theme/select_w.png" 2>/dev/null || true
+
+    mkdir -p "${pkgdir}/usr/share/hackerrub/theme/icons"
+    cp -r grub-theme/icons/* "${pkgdir}/usr/share/hackerrub/theme/icons/" 2>/dev/null || true
+
+    install -Dm755 src/hackerrub-config "${pkgdir}/usr/bin/hackerrub-config"
+}

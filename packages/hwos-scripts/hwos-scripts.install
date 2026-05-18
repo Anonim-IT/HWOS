@@ -1,0 +1,8 @@
+post_install() {
+    echo "HWOS system scripts installed"
+    echo "Run 'hwos-help' to see available commands"
+}
+
+post_upgrade() {
+    echo "hwos-scripts updated"
+}

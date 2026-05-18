@@ -1,0 +1,15 @@
+post_install() {
+    echo "Welcome to HWOS - Hacker Web OS"
+    echo "Package manager 'hwins' installed."
+    echo "Usage: hwins help"
+    echo ""
+    echo "Register hwins alias: echo 'alias pacman=hwins' >> /etc/bash.bashrc"
+}
+
+post_upgrade() {
+    echo "hwins updated to version ${2} -> ${1}"
+}
+
+pre_remove() {
+    echo "Removing hwins..."
+}

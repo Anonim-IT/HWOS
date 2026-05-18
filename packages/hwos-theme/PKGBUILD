@@ -1,0 +1,43 @@
+# Maintainer: HWOS Team <dev@hwos.dev>
+pkgname=hwos-theme
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="HWOS branding and theme (fastfetch, plymouth, SDDM, wallpapers)"
+arch=('any')
+url="https://hwos.dev"
+license=('GPL3')
+depends=('bash' 'fastfetch')
+optdepends=(
+  'plymouth: boot splash'
+  'sddm: display manager theming'
+)
+install=hwos-theme.install
+source=(
+  "fastfetch/config.jsonc"
+  "fastfetch/hwos-logo.txt"
+  "plymouth/hwos.plymouth"
+  "plymouth/hwos.script"
+  "sddm/HWOS.conf"
+  "backgrounds/hwos-wallpaper.png"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm644 fastfetch/config.jsonc "${pkgdir}/usr/share/hwos/fastfetch/config.jsonc"
+    install -Dm644 fastfetch/hwos-logo.txt "${pkgdir}/usr/share/hwos/fastfetch/logo.txt"
+
+    install -Dm644 plymouth/hwos.plymouth \
+        "${pkgdir}/usr/share/plymouth/themes/hwos/hwos.plymouth" 2>/dev/null || true
+    install -Dm644 plymouth/hwos.script \
+        "${pkgdir}/usr/share/plymouth/themes/hwos/hwos.script" 2>/dev/null || true
+
+    install -Dm644 sddm/HWOS.conf \
+        "${pkgdir}/usr/share/sddm/themes/hwos/theme.conf" 2>/dev/null || true
+
+    install -Dm644 backgrounds/hwos-wallpaper.png \
+        "${pkgdir}/usr/share/backgrounds/hwos/hwos-wallpaper.png" 2>/dev/null || true
+
+    mkdir -p "${pkgdir}/usr/share/fastfetch/presets"
+    ln -sf /usr/share/hwos/fastfetch/config.jsonc \
+        "${pkgdir}/usr/share/fastfetch/presets/hwos.jsonc" 2>/dev/null || true
+}

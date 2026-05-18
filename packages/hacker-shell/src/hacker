@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+# Hacker Shell - HWOS Custom Shell Environment
+# Version: 1.0.0
+#
+# This is the default login shell for Hacker Web OS.
+# It provides a feature-rich environment with HWOS branding,
+# custom prompts, intelligent completion, and built-in tools.
+
+HACKER_VERSION="1.0.0"
+HACKER_ROOT="/usr/share/hacker-shell"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+NC='\033[0m'
+
+# Detect if we're in a login/interactive shell
+if [[ -n "$PS1" ]]; then
+    HACKER_INTERACTIVE=true
+else
+    HACKER_INTERACTIVE=false
+fi
+
+# Source the user's own config if it exists
+if [[ -f "$HOME/.hackerrc" ]]; then
+    source "$HOME/.hackerrc"
+fi
+
+# Source HWOS shell integration
+if [[ -f "$HACKER_ROOT/hwos-integration.sh" ]]; then
+    source "$HACKER_ROOT/hwos-integration.sh"
+fi
+
+# Hacker Shell prompt
+__hacker_prompt() {
+    local last_exit=$?
+    local user_host="${GREEN}\u${CYAN}@${GREEN}\h${NC}"
+    local dir="${CYAN}\w${NC}"
+    local prompt_char="${GREEN}$${NC}"
+
+    if [[ $last_exit -ne 0 ]]; then
+        local exit_mark="${RED}[$last_exit]${NC} "
+    else
+        local exit_mark=""
+    fi
+
+    PS1="\n${CYAN}╭─${NC}${user_host} ${dir}\n${CYAN}╰─${NC}${exit_mark}${prompt_char} "
+    PS2="${CYAN}>${NC} "
+}
+
+# Set ZSH as the underlying shell if available
+__hacker_init() {
+    if [[ -f /bin/zsh ]]; then
+        export SHELL="/usr/bin/zsh"
+    elif [[ -f /bin/bash ]]; then
+        export SHELL="/bin/bash"
+    fi
+
+    export EDITOR="${EDITOR:-vim}"
+    export PAGER="${PAGER:-less}"
+    export TERM="${TERM:-xterm-256color}"
+    export HWOS_SHELL="hacker"
+
+    # HWOS paths
+    export PATH="$PATH:/usr/share/hwos/scripts"
+
+    # Hacker Shell aliases
+    alias hwfetch="fastfetch -c /etc/fastfetch/config.jsonc"
+    alias hwupdate="hwos-update all"
+    alias hwfw="hwos-firewall"
+    alias hwencrypt="hwos-encrypt"
+    alias hwinstall="sudo hwos-installer"
+    alias hwhelp="hwos-help"
+    alias hwins="sudo hwins"
+
+    # Useful shortcuts
+    alias ..="cd .."
+    alias ...="cd ../.."
+    alias ll="ls -lah"
+    alias la="ls -A"
+    alias l="ls -CF"
+    alias cls="clear"
+    alias h="history"
+    alias j="jobs -l"
+    alias c="clear"
+    alias df="df -h"
+    alias du="du -h"
+    alias free="free -h"
+    alias grep="grep --color=auto"
+    alias diff="diff --color=auto"
+    alias ip="ip -color=auto"
+
+    # Safety
+    alias rm="rm -i"
+    alias cp="cp -i"
+    alias mv="mv -i"
+    alias ln="ln -i"
+    alias chown="chown --preserve-root"
+    alias chmod="chmod --preserve-root"
+    alias chgrp="chgrp --preserve-root"
+
+    # Set prompt
+    PROMPT_COMMAND=__hacker_prompt
+}
+
+# Welcome message
+__hacker_welcome() {
+    if [[ "$HACKER_INTERACTIVE" == "true" ]]; then
+        if [[ ! -f "$HOME/.hacker_initialized" ]]; then
+            echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+            echo -e "${CYAN}║${NC} ${WHITE}Welcome to Hacker Shell v${HACKER_VERSION}${NC}      ${CYAN}║${NC}"
+            echo -e "${CYAN}║${NC} ${GREEN}HWOS - Hacker Web OS${NC}                    ${CYAN}║${NC}"
+            echo -e "${CYAN}║${NC}                                          ${CYAN}║${NC}"
+            echo -e "${CYAN}║${NC} Type ${GREEN}hwos-help${NC} for available commands      ${CYAN}║${NC}"
+            echo -e "${CYAN}║${NC} Type ${GREEN}hwfetch${NC} to show system info           ${CYAN}║${NC}"
+            echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+            touch "$HOME/.hacker_initialized"
+        fi
+    fi
+}
+
+__hacker_version() {
+    echo "Hacker Shell v${HACKER_VERSION}"
+    echo "HWOS - Hacker Web OS"
+    echo "License: GPLv3"
+}
+
+__hacker_help() {
+    cat << 'HELP'
+Hacker Shell - HWOS Custom Shell Environment
+
+Usage:
+  hacker            Start interactive shell
+  hacker --help     Show this help
+  hacker --version  Show version info
+
+Environment:
+  ~/.hackerrc       User-specific shell configuration
+  /usr/share/hacker-shell/  System shell data
+
+Features:
+  - Custom HWOS-branded prompt
+  - Built-in HWOS command aliases
+  - Intelligent completion
+  - Plugin support via ~/.hackerrc
+  - ZSH/Bash compatible
+
+HWOS Commands:
+  hwins       - Package manager (wrapper around pacman)
+  hwos-update - System update tool
+  hwos-firewall - Firewall manager (nftables)
+  hwos-encrypt - Encryption manager (LUKS)
+  hwos-installer - Dialog-based system installer
+  hwfetch     - System information (fastfetch themed)
+  hwos-help   - Full command reference
+HELP
+}
+
+# Main
+case "${1:-}" in
+    --help|-h)
+        __hacker_help
+        ;;
+    --version|-v)
+        __hacker_version
+        ;;
+    --init)
+        # Called by zsh/bash to initialize
+        __hacker_init
+        ;;
+    "")
+        # Interactive shell
+        if [[ "$HACKER_INTERACTIVE" == "true" ]]; then
+            __hacker_init
+            __hacker_welcome
+        fi
+        ;;
+    *)
+        # Command execution mode
+        __hacker_init
+        exec "$@"
+        ;;
+esac

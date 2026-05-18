@@ -1,0 +1,17 @@
+# Maintainer: HWOS Team <dev@hwos.dev>
+pkgname=hwins
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="HWOS Package Manager - Custom wrapper around pacman for Hacker Web OS"
+arch=('any')
+url="https://hwos.dev"
+license=('GPL3')
+depends=('pacman' 'bash' 'sudo' 'pacutils')
+install=hwins.install
+source=("hwins")
+sha256sums=('SKIP')
+
+package() {
+    install -Dm755 hwins "${pkgdir}/usr/bin/hwins"
+    install -Dm644 hwins.conf "${pkgdir}/etc/hwins.conf"
+}

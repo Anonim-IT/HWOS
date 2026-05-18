@@ -1,0 +1,137 @@
+# HWOS Base Packages
+base
+base-devel
+linux-6.1
+linux-6.1-headers
+linux-firmware
+amd-ucode
+intel-ucode
+
+# Boot
+grub
+hackerrub
+efibootmgr
+
+# Networking
+networkmanager
+iwd
+wireless_tools
+wpa_supplicant
+openssh
+openvpn
+wireguard-tools
+nftables
+
+# Security & Encryption
+cryptsetup
+gnupg
+gpg
+pinentry
+
+# Window Managers (only WM, no DE)
+hyprland
+hyprpaper
+hyprlock
+hypridle
+waybar
+rofi-wayland
+dunst
+kitty
+swaync
+polkit-kde-agent
+qt5-wayland
+qt6-wayland
+xdg-desktop-portal-hyprland
+i3-wm
+i3status
+dmenu
+sway
+swaybg
+waybar
+wofi
+foot
+
+# Display Manager
+sddm
+
+# Sound
+pipewire
+pipewire-alsa
+pipewire-jack
+pipewire-pulse
+wireplumber
+alsa-utils
+
+# Development
+git
+python
+python-pip
+nodejs
+npm
+go
+rust
+rustup
+docker
+docker-compose
+
+# HWOS Custom Packages
+hwins
+hwos-installer
+hwos-scripts
+hwos-configs
+hwos-theme
+hacker-shell
+
+# Shell & Tools
+zsh
+fastfetch
+htop
+btop
+lf
+ranger
+fzf
+ripgrep
+fd
+bat
+exa
+delta
+jq
+yq
+tmux
+screen
+tree
+unzip
+zip
+p7zip
+unrar
+xclip
+wl-clipboard
+
+# Filesystem
+btrfs-progs
+dosfstools
+exfatprogs
+ntfs-3g
+f2fs-tools
+xfsprogs
+e2fsprogs
+lvm2
+mdadm
+cryptsetup
+squashfs-tools
+erofs-utils
+
+# Virtualization
+qemu-desktop
+libvirt
+virt-manager
+
+# Fonts
+ttf-hack
+ttf-fira-code
+ttf-firacode-nerd
+ttf-nerd-fonts-symbols
+noto-fonts
+noto-fonts-emoji
+ttf-dejavu
+ttf-liberation

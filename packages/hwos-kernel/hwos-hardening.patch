@@ -1,0 +1,19 @@
+diff --git a/security/Kconfig b/security/Kconfig
+index abc123..def456 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -1,6 +1,12 @@
++# HWOS Kernel Hardening Patch
++# Enables additional security features for Hacker Web OS
++
+ config SECURITY
+ 	bool "Enable different security models"
+-	default n
++	default y
++
++config SECURITY_HWOS
++	bool "HWOS Hardening"
++	default y
++	help
++	  Additional security hardening for Hacker Web OS.
++	  Enables extra kernel hardening measures.

@@ -1,0 +1,8 @@
+post_install() {
+    echo "HWOS Installer v1.0.0 installed"
+    echo "Run: hwos-installer (as root)"
+}
+
+post_upgrade() {
+    echo "hwos-installer updated to ${2} -> ${1}"
+}

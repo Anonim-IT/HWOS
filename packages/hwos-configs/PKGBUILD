@@ -1,0 +1,30 @@
+# Maintainer: HWOS Team <dev@hwos.dev>
+pkgname=hwos-configs
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="HWOS default system configurations"
+arch=('any')
+url="https://hwos.dev"
+license=('GPL3')
+depends=('bash')
+install=hwos-configs.install
+source=(
+  "etc/hwos-release"
+  "etc/os-release"
+  "etc/motd"
+  "etc/systemd/journald.conf.d/00-hwos.conf"
+  "etc/sysctl.d/99-hwos-hardening.conf"
+  "etc/nftables.conf"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm644 etc/hwos-release "${pkgdir}/etc/hwos-release"
+    install -Dm644 etc/os-release "${pkgdir}/usr/lib/os-release"
+    install -Dm644 etc/motd "${pkgdir}/etc/motd"
+    install -Dm644 etc/systemd/journald.conf.d/00-hwos.conf \
+        "${pkgdir}/etc/systemd/journald.conf.d/00-hwos.conf"
+    install -Dm644 etc/sysctl.d/99-hwos-hardening.conf \
+        "${pkgdir}/etc/sysctl.d/99-hwos-hardening.conf"
+    install -Dm644 etc/nftables.conf "${pkgdir}/etc/nftables.conf" 2>/dev/null || true
+}

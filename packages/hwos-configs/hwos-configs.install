@@ -1,0 +1,9 @@
+post_install() {
+    sysctl --system 2>/dev/null || true
+    echo "HWOS system configurations applied"
+}
+
+post_upgrade() {
+    sysctl --system 2>/dev/null || true
+    echo "hwos-configs updated"
+}

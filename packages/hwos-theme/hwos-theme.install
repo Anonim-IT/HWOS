@@ -1,0 +1,8 @@
+post_install() {
+    echo "HWOS theme installed"
+    echo "Run: fastfetch -c /usr/share/hwos/fastfetch/config.jsonc"
+}
+
+post_upgrade() {
+    echo "hwos-theme updated"
+}

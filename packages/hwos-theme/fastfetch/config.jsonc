@@ -1,0 +1,117 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "/usr/share/hwos/fastfetch/logo.txt",
+    "color": {
+      "1": "cyan",
+      "2": "green"
+    },
+    "padding": {
+      "left": 1,
+      "right": 1
+    }
+  },
+  "display": {
+    "separator": " ${custom}",
+    "color": "cyan"
+  },
+  "modules": [
+    "title",
+    "separator",
+    {
+      "type": "os",
+      "key": "OS",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "host",
+      "key": "Host",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "kernel",
+      "key": "Kernel",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "uptime",
+      "key": "Uptime",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "packages",
+      "key": "Packages",
+      "keyColor": "green",
+      "format": "{1} ({2})"
+    },
+    {
+      "type": "shell",
+      "key": "Shell",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "de",
+      "key": "DE",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "wm",
+      "key": "WM",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "terminal",
+      "key": "Terminal",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "cpu",
+      "key": "CPU",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "gpu",
+      "key": "GPU",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    {
+      "type": "memory",
+      "key": "Memory",
+      "keyColor": "green",
+      "format": "{1} / {2}"
+    },
+    {
+      "type": "disk",
+      "key": "Disk",
+      "keyColor": "green",
+      "format": "{1} / {2} ({3})"
+    },
+    {
+      "type": "localip",
+      "key": "IP",
+      "keyColor": "green",
+      "format": "{1} ({2})"
+    },
+    {
+      "type": "bluetooth",
+      "key": "BT",
+      "keyColor": "green",
+      "format": "{1}"
+    },
+    "separator",
+    {
+      "type": "custom",
+      "format": "Stay anonymous. Stay sharp. Be the ghost."
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# HackerRUB - Custom GRUB configuration for HWOS
+set -euo pipefail
+
+install_theme() {
+    local theme_dir="/boot/grub/themes/hackerrub"
+    mkdir -p "$theme_dir"
+    cp -r /usr/share/hackerrub/theme/* "$theme_dir/"
+}
+
+configure_grub() {
+    local grub_config="/etc/default/grub"
+
+    cat > "$grub_config" << 'GRUB'
+# HackerRUB - HWOS Bootloader Configuration
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=10
+GRUB_TIMEOUT_STYLE=menu
+GRUB_DISTRIBUTOR="HWOS"
+GRUB_TERMINAL_OUTPUT=gfxterm
+GRUB_GFXMODE=1920x1080,1440x900,1024x768,auto
+GRUB_GFXPAYLOAD_LINUX=keep
+GRUB_BACKGROUND=/boot/grub/themes/hackerrub/background.png
+GRUB_THEME=/boot/grub/themes/hackerrub/theme.txt
+GRUB_COLOR_NORMAL="cyan/black"
+GRUB_COLOR_HIGHLIGHT="green/black"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 rd.systemd.show_status=false rd.udev.log_level=3"
+GRUB_CMDLINE_LINUX=""
+GRUB_DISABLE_OS_PROBER=false
+GRUB_ENABLE_CRYPTODISK=y
+GRUB_SAVEDEFAULT=true
+GRUB_DISABLE_RECOVERY=false
+GRUB_DISABLE_SUBMENU=y
+GRUB_FONT=/boot/grub/fonts/hacknerd.pf2
+GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
+GRUB_PRELOAD_MODULES="part_gpt part_msdos ext2 btrfs xfs squash4 loopback cryptodisk luks lvm chain"
+GRUB_HIDDEN_TIMEOUT=0
+GRUB_INIT_TUNE="480 440 1 0 4 440 1"
+GRUB_BADRAM="0x0,0x0"
+GRUB_COMPATIBILITY="linux6.1"
+GRUB_DISTRO_LOGO="HWOS - Hacker Web OS"
+GRUB_DISTRO_VERSION="1.0.0 White Hacker"
+GRUB_TIMEOUT_STYLE=menu
+GRUB_INITRD_OVERLAY=""
+GRUB_DEVICE=""
+GRUB_DEVICE_UUID=""
+GRUB_FS=""
+GRUB_FSTAB=""
+GRUB_CMDLINE_NET=""
+GRUB_CMDLINE_XEN=""
+GRUB_CMDLINE_NETWORK=""
+GRUB_CMDLINE_LINUX_RECOVERY="single"
+GRUB_EARLY_INITRD_LINUX_CUSTOM=""
+GRUB_EARLY_INITRD_LINUX_STOCK=""
+GRUB_GFXPAYLOAD_KEEP=1
+GRUB_SERIAL=1
+GRUB_SAVE_DEFAULT=1
+GRUB_RECORDFAIL_TIMEOUT=30
+GRUB_TERMINAL_INPUT="console serial"
+GRUB_VIDEO_BACKEND="all"
+GRUB_MORBID_DELAY=0
+GRUB_HIDDEN_TIMEOUT_QUIET=true
+GRUB_COLOR_THEME="hackerrub"
+GRUB_SECURITY="disable"
+GRUB_ALLOW_INSECURE=1
+GRUB_DEVICE_PARTTABLE="gpt"
+GRUB_CRYPTODIST="enable"
+GRUB_MKCONFIG_SCRIPT="/usr/sbin/grub-mkconfig"
+GRUB_MKCONFIG_ARGS="--output=/boot/grub/grub.cfg"
+GRUB_PLATFORM="x86_64-efi"
+GRUB_GFXPAYLOAD_CUSTOM="1920x1080,1440x900,1280x720,1024x768,auto"
+GRUB_SERIAL_SPEED=115200
+GRUB_NETWORK_INTERFACE="efinet"
+GRUB_CMDLINE_CRYPTO="cryptdevice=UUID=<uuid>:hwos_root"
+GRUB_CMDLINE_ANON="ip=off rd.neednet=0 net.ifnames=0"
+GRUB
+}
+
+install_font() {
+    local font_dir="/boot/grub/fonts"
+    mkdir -p "$font_dir"
+    if command -v grub-mkfont &>/dev/null; then
+        grub-mkfont -s 32 -o "$font_dir/hacknerd.pf2" \
+            /usr/share/fonts/TTF/HackNerdFont-Regular.ttf 2>/dev/null || true
+    fi
+}
+
+main() {
+    echo "[*] Installing HackerRUB theme..."
+    install_theme
+    echo "[*] Configuring GRUB as HackerRUB..."
+    configure_grub
+    echo "[*] Installing font..."
+    install_font
+    echo "[*] Updating GRUB..."
+    grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+    echo "[+] HackerRUB installed successfully!"
+}
+
+main "$@"
