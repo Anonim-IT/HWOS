@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pkg.tar.zst
+*.pkg.tar.xz
+pkg/
+src/
+archiso/out/
