@@ -35,21 +35,28 @@ if [[ -f "$HACKER_ROOT/hwos-integration.sh" ]]; then
     source "$HACKER_ROOT/hwos-integration.sh"
 fi
 
-# Hacker Shell prompt
+# Hacker Shell prompt (русский/English)
 __hacker_prompt() {
     local last_exit=$?
     local user_host="${GREEN}\u${CYAN}@${GREEN}\h${NC}"
     local dir="${CYAN}\w${NC}"
-    local prompt_char="${GREEN}$${NC}"
+    local time="$(date +%H:%M)"
 
     if [[ $last_exit -ne 0 ]]; then
-        local exit_mark="${RED}[$last_exit]${NC} "
+        local exit_mark="${RED}[✗ $last_exit]${NC} "
     else
         local exit_mark=""
     fi
 
-    PS1="\n${CYAN}╭─${NC}${user_host} ${dir}\n${CYAN}╰─${NC}${exit_mark}${prompt_char} "
-    PS2="${CYAN}>${NC} "
+    PS1="\n${CYAN}╭─${NC}${user_host} ${CYAN}${time}${NC} ${dir}\n${CYAN}╰─${NC}${exit_mark}${GREEN}$ ${NC}"
+    PS2="${CYAN}→${NC} "
+}
+
+__hacker_welcome() {
+    if [[ "$HACKER_INTERACTIVE" == "true" ]] && [[ ! -f "$HOME/.hacker_initialized" ]]; then
+        hwos-welcome 2>/dev/null || true
+        touch "$HOME/.hacker_initialized"
+    fi
 }
 
 # Set ZSH as the underlying shell if available

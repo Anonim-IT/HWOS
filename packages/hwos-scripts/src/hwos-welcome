@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# hwos-welcome — Приветственный мастер HWOS
+# Запускается при первом входе в систему
+
+HWOS_VERSION="1.0.0"
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; WHITE='\033[1;37m'; BOLD='\033[1m'; NC='\033[0m'
+
+clear
+cat <<WELCOME
+${CYAN}╔══════════════════════════════════════════════════════╗${NC}
+${CYAN}║${WHITE}${BOLD}              ДОБРО ПОЖАЛОВАТЬ В HWOS!${NC}              ${CYAN}║${NC}
+${CYAN}║${NC}    ${GREEN}Hacker Web OS v${HWOS_VERSION}${NC}                         ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${WHITE}HWOS — это простая и понятная система на базе Arch.${NC} ${CYAN}║${NC}
+${CYAN}║${NC}  ${WHITE}Всё уже настроено и готово к работе!${NC}               ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}Начнём знакомство?${NC}                                ${CYAN}║${NC}
+${CYAN}╚══════════════════════════════════════════════════════╝${NC}
+
+WELCOME
+
+echo -e "${YELLOW}Нажмите Enter, чтобы продолжить...${NC}"
+read -r
+
+clear
+cat <<INFO
+${CYAN}╔══════════════════════════════════════════════════════╗${NC}
+${CYAN}║${WHITE}${BOLD}              ЧТО ВЫ УМЕЕТЕ ДЕЛАТЬ?${NC}                ${CYAN}║${NC}
+${CYAN}╠══════════════════════════════════════════════════════╣${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-help${NC}      — список всех команд HWOS        ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-update${NC}    — обновить систему               ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-installer${NC} — установить HWOS на другой ПК  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-encrypt${NC}   — зашифровать диск/файл         ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-firewall${NC}  — настроить фаервол             ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwfetch${NC}        — показать информацию о системе ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwins${NC}          — установить программы           ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${YELLOW}Пример: установите браузер${NC}                     ${CYAN}║${NC}
+${CYAN}║${NC}  ${WHITE}  hwins install chromium${NC}                       ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}╚══════════════════════════════════════════════════════╝${NC}
+
+INFO
+
+echo -e "${YELLOW}Нажмите Enter, чтобы продолжить...${NC}"
+read -r
+
+cat <<TIPS
+${CYAN}╔══════════════════════════════════════════════════════╗${NC}
+${CYAN}║${WHITE}${BOLD}              ПОЛЕЗНЫЕ СОВЕТЫ${NC}                     ${CYAN}║${NC}
+${CYAN}╠══════════════════════════════════════════════════════╣${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}🔑 Шифрование${NC}                                    ${CYAN}║${NC}
+${CYAN}║${NC}     hwos-encrypt disk — зашифровать весь диск   ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}🛡️ Безопасность${NC}                                  ${CYAN}║${NC}
+${CYAN}║${NC}     hwos-firewall enable — включить фаервол     ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}📦 Программы${NC}                                      ${CYAN}║${NC}
+${CYAN}║${NC}     hwins search — найти программу               ${CYAN}║${NC}
+${CYAN}║${NC}     hwins install firefox — установить Firefox   ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}🔄 Обновления${NC}                                     ${CYAN}║${NC}
+${CYAN}║${NC}     hwos-update all — полное обновление системы  ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${YELLOW}💡 HWOS использует Hacker Shell — нашу            ${CYAN}║${NC}
+${CYAN}║${NC}  ${YELLOW}   собственную оболочку с автодополнением и       ${CYAN}║${NC}
+${CYAN}║${NC}  ${YELLOW}   цветным промптом. Пишите команды как обычно!   ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}╚══════════════════════════════════════════════════════╝${NC}
+
+TIPS
+
+echo -e "${YELLOW}Нажмите Enter, чтобы закрыть это окно...${NC}"
+read -r
+
+clear
+cat <<GOODBYE
+${GREEN}╔══════════════════════════════════════════════════════╗${NC}
+${GREEN}║${NC}                                                  ${GREEN}║${NC}
+${GREEN}║${NC}     ${WHITE}HWOS готов к работе! Приятного использования!${NC}   ${GREEN}║${NC}
+${GREEN}║${NC}                                                  ${GREEN}║${NC}
+${GREEN}║${NC}     ${WHITE}Возник вопрос? Наберите:${NC} ${CYAN}hwos-help${NC}            ${GREEN}║${NC}
+${GREEN}║${NC}                                                  ${GREEN}║${NC}
+${GREEN}╚══════════════════════════════════════════════════════╝${NC}
+
+GOODBYE
+
+sleep 2

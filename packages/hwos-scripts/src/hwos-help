@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# hwos-help - HWOS Command Reference
+# hwos-help — Справка HWOS на русском языке
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-DIM='\033[2m'
-NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; WHITE='\033[1;37m'; DIM='\033[2m'; NC='\033[0m'
 
 echo -e "${CYAN}"
 echo "██████╗ ██╗    ██╗ ██████╗ ███████╗    ██╗  ██╗███████╗██╗     ██████╗"
@@ -18,44 +13,63 @@ echo "██║  ██║██║███╗██║██║   ██║╚
 echo "██████╔╝╚███╔███╔╝╚██████╔╝███████║    ██║  ██║███████╗███████╗██║"
 echo "╚═════╝  ╚══╝╚══╝  ╚═════╝ ╚══════╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝"
 echo -e "${NC}"
-echo -e "${WHITE}HWOS Command Reference v1.0.0${NC}\n"
+echo -e "${WHITE}HWOS — Справочник команд v1.0.0${NC}\n"
 
-echo -e "${YELLOW}=== Package Management ===${NC}"
-echo -e "  ${GREEN}hwins${NC} ${DIM}install <pkg>${NC}     Install package"
-echo -e "  ${GREEN}hwins${NC} ${DIM}remove <pkg>${NC}      Remove package"
-echo -e "  ${GREEN}hwins${NC} ${DIM}update${NC}            Update databases"
-echo -e "  ${GREEN}hwins${NC} ${DIM}upgrade${NC}           Upgrade system"
-echo -e "  ${GREEN}hwins${NC} ${DIM}sync${NC}              Full sync + upgrade"
-echo -e "  ${GREEN}hwins${NC} ${DIM}search <term>${NC}     Search packages\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  📦 УПРАВЛЕНИЕ ПАКЕТАМИ${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hwins install${NC}  ${DIM}пакет${NC}      Установить программу"
+echo -e "  ${GREEN}hwins remove${NC}   ${DIM}пакет${NC}      Удалить программу"
+echo -e "  ${GREEN}hwins search${NC}   ${DIM}запрос${NC}     Найти программу"
+echo -e "  ${GREEN}hwins update${NC}                Обновить базу пакетов"
+echo -e "  ${GREEN}hwins upgrade${NC}               Обновить все программы"
+echo -e "  ${GREEN}hwins sync${NC}                  Полное обновление системы"
+echo -e "  ${GREEN}hwins list${NC}                  Список установленных\n"
 
-echo -e "${YELLOW}=== System Management ===${NC}"
-echo -e "  ${GREEN}hwos-update${NC} ${DIM}all${NC}          Full system update"
-echo -e "  ${GREEN}hwos-update${NC} ${DIM}system${NC}       Update packages only"
-echo -e "  ${GREEN}hwos-update${NC} ${DIM}kernel${NC}       Update kernel\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  🖥️ СИСТЕМА${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hwos-update${NC}    ${DIM}all${NC}        Полное обновление"
+echo -e "  ${GREEN}hwos-update${NC}    ${DIM}system${NC}     Обновить пакеты"
+echo -e "  ${GREEN}hwos-update${NC}    ${DIM}kernel${NC}     Обновить ядро"
+echo -e "  ${GREEN}hwfetch${NC}                    Информация о системе\n"
 
-echo -e "${YELLOW}=== Firewall ===${NC}"
-echo -e "  ${GREEN}hwos-firewall${NC} ${DIM}default${NC}    Apply default rules"
-echo -e "  ${GREEN}hwos-firewall${NC} ${DIM}status${NC}     Show firewall rules\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  🔒 БЕЗОПАСНОСТЬ${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hwos-firewall${NC}  ${DIM}default${NC}    Включить фаервол"
+echo -e "  ${GREEN}hwos-firewall${NC}  ${DIM}status${NC}     Статус фаервола"
+echo -e "  ${GREEN}hwos-firewall${NC}  ${DIM}disable${NC}    Отключить фаервол"
+echo -e "  ${GREEN}hwos-encrypt${NC}   ${DIM}disk${NC}       Зашифровать диск"
+echo -e "  ${GREEN}hwos-encrypt${NC}   ${DIM}container${NC}  Создать контейнер"
+echo -e "  ${GREEN}hwos-encrypt${NC}   ${DIM}status${NC}     Статус шифрования\n"
 
-echo -e "${YELLOW}=== Encryption ===${NC}"
-echo -e "  ${GREEN}hwos-encrypt${NC} ${DIM}disk${NC}        Encrypt disk with LUKS"
-echo -e "  ${GREEN}hwos-encrypt${NC} ${DIM}container${NC}   Create encrypted container"
-echo -e "  ${GREEN}hwos-encrypt${NC} ${DIM}status${NC}      Show encryption status\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  💿 УСТАНОВКА${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hwos-installer${NC}           Запустить установщик\n"
 
-echo -e "${YELLOW}=== Installation ===${NC}"
-echo -e "  ${GREEN}hwos-installer${NC}         Launch dialog installer\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  🔧 ЗАГРУЗЧИК${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hackerrub-config${NC}         Настроить HackerRUB\n"
 
-echo -e "${YELLOW}=== Bootloader ===${NC}"
-echo -e "  ${GREEN}hackerrub-config${NC}       Configure HackerRUB\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  🐚 ОБОЛОЧКА${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hacker${NC}                  Hacker Shell (ваша оболочка)"
+echo -e "  ${GREEN}hacker --help${NC}           Справка по оболочке\n"
 
-echo -e "${YELLOW}=== Shell ===${NC}"
-echo -e "  ${GREEN}hacker${NC}                 Hacker Shell (login shell)"
-echo -e "  ${GREEN}hacker --help${NC}          Hacker Shell help\n"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  ⚡ БЫСТРЫЕ КОМАНДЫ${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${DIM}hwupdate  = hwos-update all${NC}"
+echo -e "  ${DIM}hwfw      = hwos-firewall${NC}"
+echo -e "  ${DIM}hwencrypt = hwos-encrypt${NC}"
+echo -e "  ${DIM}hwinstall = hwos-installer${NC}"
+echo -e "  ${DIM}hwfetch   = fastfetch${NC}"
+echo -e "  ${DIM}hwhelp    = эта справка${NC}"
+echo -e "  ${DIM}hwelcome  = приветствие HWOS${NC}\n"
 
-echo -e "${YELLOW}=== Quick Aliases ===${NC}"
-echo -e "  ${DIM}hwupdate = hwos-update all${NC}"
-echo -e "  ${DIM}hwfw     = hwos-firewall${NC}"
-echo -e "  ${DIM}hwencrypt= hwos-encrypt${NC}"
-echo -e "  ${DIM}hwinstall= hwos-installer${NC}"
-echo -e "  ${DIM}hwfetch  = fastfetch (HWOS theme)${NC}"
-echo -e "  ${DIM}hwhelp   = this menu${NC}"
+echo -e "${CYAN}💡 HWOS — это просто! ${DIM}Наберите любую команду и наслаждайтесь.${NC}"
+echo -e "${CYAN}🌐 ${DIM}GitHub: https://github.com/Anonim-IT/HWOS${NC}"

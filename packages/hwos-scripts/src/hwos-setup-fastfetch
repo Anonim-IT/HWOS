@@ -1,193 +1,96 @@
 #!/usr/bin/env bash
-# hwos-setup-fastfetch - Configure fastfetch for HWOS branding
+# hwos-setup-fastfetch — Настройка fastfetch для HWOS
 set -euo pipefail
 
 HWOS_CONFIG_DIR="/etc/fastfetch"
 HWOS_CONFIG_FILE="$HWOS_CONFIG_DIR/config.jsonc"
 
 setup_fastfetch() {
-    mkdir -p "$HWOS_CONFIG_DIR"
+  mkdir -p "$HWOS_CONFIG_DIR"
 
-    cat > "$HWOS_CONFIG_FILE" << 'FASTFETCH'
+  cat > "$HWOS_CONFIG_FILE" << 'FASTFETCH'
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": {
     "type": "builtin",
-    "color": {
-      "1": "cyan",
-      "2": "green"
-    },
-    "padding": {
-      "left": 2,
-      "right": 1
-    }
+    "color": { "1": "cyan", "2": "green" },
+    "padding": { "left": 2, "right": 1 }
   },
   "display": {
     "separator": " → ",
     "color": "cyan"
   },
   "modules": [
-    {
-      "type": "custom",
-      "format": "┌─────────────────────────────────────────────┐"
-    },
-    {
-      "type": "title",
-      "format": "│  {#cyan}{1}{#green}@{#cyan}{2}{#reset}",
-      "padding": "left"
-    },
-    {
-      "type": "custom",
-      "format": "├─────────────────────────────────────────────┤"
-    },
-    {
-      "type": "os",
-      "key": "│  OS",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "kernel",
-      "key": "│  Kernel",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "uptime",
-      "key": "│  Uptime",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "packages",
-      "key": "│  Packages",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "shell",
-      "key": "│  Shell",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "display",
-      "key": "│  Display",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "wm",
-      "key": "│  WM",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "terminal",
-      "key": "│  Terminal",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "cpu",
-      "key": "│  CPU",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "gpu",
-      "key": "│  GPU",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "memory",
-      "key": "│  Memory",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "disk",
-      "key": "│  Disk",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "battery",
-      "key": "│  Battery",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "localip",
-      "key": "│  IP",
-      "keyColor": "green",
-      "format": "{#cyan}{1}{#reset}"
-    },
-    {
-      "type": "custom",
-      "format": "├─────────────────────────────────────────────┤"
-    },
-    {
-      "type": "custom",
-      "format": "│  {#green}HWOS{#cyan} - {#green}Hacker Web OS{#reset}"
-    },
-    {
-      "type": "custom",
-      "format": "└─────────────────────────────────────────────┘"
-    }
+    { "type": "custom", "format": "┌──────────────────────────────────────┐" },
+    { "type": "title", "format": "│  {#cyan}{1}{#green}@{#cyan}{2}{#reset}", "padding": "left" },
+    { "type": "custom", "format": "├──────────────────────────────────────┤" },
+    { "type": "os", "key": "│  ОС", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "kernel", "key": "│  Ядро", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "uptime", "key": "│  Работает", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "packages", "key": "│  Пакеты", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "shell", "key": "│  Оболочка", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "wm", "key": "│  Окружение", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "terminal", "key": "│  Терминал", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "cpu", "key": "│  Процессор", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "gpu", "key": "│  Видеокарта", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "memory", "key": "│  Память", "keyColor": "green", "format": "{#cyan}{1} / {2}" },
+    { "type": "disk", "key": "│  Диск", "keyColor": "green", "format": "{#cyan}{1} / {2} ({3})" },
+    { "type": "localip", "key": "│  IP", "keyColor": "green", "format": "{#cyan}{1}" },
+    { "type": "custom", "format": "├──────────────────────────────────────┤" },
+    { "type": "custom", "format": "│  {#green}HWOS{#cyan} — {#green}Hacker Web OS{#reset}" },
+    { "type": "custom", "format": "│  {#cyan}hwos-help — список команд{#reset}" },
+    { "type": "custom", "format": "└──────────────────────────────────────┘" }
   ]
 }
 FASTFETCH
 
-    mkdir -p /etc/skel/.config/fastfetch
-    cp "$HWOS_CONFIG_FILE" /etc/skel/.config/fastfetch/config.jsonc
-
-    echo -e "${GREEN}[+] HWOS fastfetch configured${NC}"
+  mkdir -p /etc/skel/.config/fastfetch
+  cp "$HWOS_CONFIG_FILE" /etc/skel/.config/fastfetch/config.jsonc
+  echo -e "${GREEN}[+] Fastfetch настроен для HWOS${NC}"
 }
 
-setup_shell_aliases() {
-    cat >> /etc/skel/.bashrc << 'BASHRC'
-
-# HWOS Aliases
+setup_aliases() {
+  cat > /etc/skel/.bashrc << 'BASHRC'
+# HWOS — настройки оболочки
 alias hwfetch="fastfetch -c /etc/fastfetch/config.jsonc"
 alias hwupdate="hwos-update all"
 alias hwfw="hwos-firewall"
 alias hwencrypt="hwos-encrypt"
 alias hwinstall="sudo hwos-installer"
 alias hwhelp="hwos-help"
+alias hwelcome="hwos-welcome"
+alias ll="ls -lah"
+alias la="ls -A"
+alias c="clear"
+alias ..="cd .."
 BASHRC
 
-    cat > /etc/skel/.zshrc << 'ZSHRC'
-# HWOS ZSH Configuration
+  cat > /etc/skel/.zshrc << 'ZSHRC'
+# HWOS — настройки ZSH
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="hacker"
 plugins=(git sudo archlinux systemd docker)
-
 source $ZSH/oh-my-zsh.sh
 
-# HWOS Aliases
 alias hwfetch="fastfetch -c /etc/fastfetch/config.jsonc"
 alias hwupdate="hwos-update all"
 alias hwfw="hwos-firewall"
 alias hwencrypt="hwos-encrypt"
 alias hwinstall="sudo hwos-installer"
 alias hwhelp="hwos-help"
-
-# HWOS Prompt
-PROMPT='%{%F{cyan}%}╭─%{%F{green}%}%n%{%F{white}%}@%{%F{cyan}%}%m %{%F{green}%}%~%{%F{white}%}
-%{%F{cyan}%}╰─%{%F{green}%}$ %{%f%}'
-RPROMPT='%{%F{cyan}%}[HWOS]%{%f%}'
+alias hwelcome="hwos-welcome"
+alias ll="ls -lah"
+alias c="clear"
+alias ..="cd .."
 ZSHRC
 
-    cp /etc/skel/.zshrc /etc/skel/.zprofile 2>/dev/null || true
-    echo -e "${GREEN}[+] HWOS shell aliases configured${NC}"
+  echo -e "${GREEN}[+] Алиасы HWOS настроены${NC}"
 }
 
 main() {
-    setup_fastfetch
-    setup_shell_aliases
-    echo -e "${GREEN}[+] HWOS shell environment ready!${NC}"
+  setup_fastfetch
+  setup_aliases
+  echo -e "${GREEN}[+] Окружение HWOS готово!${NC}"
 }
 
 main "$@"

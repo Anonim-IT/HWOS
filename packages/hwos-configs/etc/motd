@@ -1,8 +1,13 @@
 ╔══════════════════════════════════════════════════════╗
-║               HACKER WEB OS (HWOS)                  ║
-║                     v1.0.0                           ║
+║          ДОБРО ПОЖАЛОВАТЬ В HWOS!                    ║
+║          Hacker Web OS  v1.0.0                       ║
 ║                                                      ║
-║  Commands:  hwos-help    - Show command reference   ║
-║             hwfetch      - System info              ║
-║             hwupdate     - Update system            ║
+║  HWOS — это просто.                                  ║
+║                                                      ║
+║  📦 hwos-help     — список всех команд               ║
+║  🔄 hwos-update   — обновить систему                 ║
+║  🖥️ hwfetch       — информация о системе             ║
+║  💿 hwos-installer— установить HWOS на другой ПК     ║
+║                                                      ║
+║  Наберите hwos-help и начните знакомство!            ║
 ╚══════════════════════════════════════════════════════╝

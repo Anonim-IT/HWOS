@@ -1,109 +1,63 @@
 #!/usr/bin/env bash
-# hwos-firewall - HWOS Firewall Manager (nftables)
+# hwos-firewall — Управление фаерволом HWOS
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 RULES_FILE="/etc/nftables.d/hwos.nft"
 
-apply_default() {
-    mkdir -p /etc/nftables.d
-
-    cat > "$RULES_FILE" << 'NFT'
+apply() {
+  mkdir -p /etc/nftables.d
+  cat > "$RULES_FILE" << 'NFT'
 #!/usr/sbin/nft -f
-
 flush ruleset
-
 table inet hwos_filter {
-    chain input {
-        type filter hook input priority 0; policy drop;
-
-        iif lo accept
-        ct state established,related accept
-
-        tcp dport 22 ct state new limit rate 5/minute accept
-        ip protocol icmp accept
-        ip6 protocol icmpv6 accept
-        udp dport 5353 accept
-        udp dport 67 accept
-        udp dport 68 accept
-
-        log prefix "HWOS-INPUT-DROP: " flags all counter drop
-    }
-
-    chain output {
-        type filter hook output priority 0; policy accept;
-    }
-
-    chain forward {
-        type filter hook forward priority 0; policy drop;
-        log prefix "HWOS-FORWARD-DROP: " flags all counter drop
-    }
+  chain input {
+    type filter hook input priority 0; policy drop;
+    iif lo accept
+    ct state established,related accept
+    tcp dport 22 ct state new limit rate 5/minute accept
+    ip protocol icmp accept
+    udp dport 67-68 accept
+    log prefix "HWOS-IN: " flags all counter drop
+  }
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+  }
 }
 NFT
-
-    chmod +x "$RULES_FILE"
-    nft -f "$RULES_FILE"
-    echo -e "${GREEN}[+] HWOS firewall rules applied${NC}"
+  chmod +x "$RULES_FILE"
+  nft -f "$RULES_FILE"
+  echo -e "${GREEN}[+] Фаервол HWOS включён. Ваша система защищена.${NC}"
 }
 
 disable() {
-    nft flush ruleset
-    nft add table inet filter
-    nft add chain inet filter input { type filter hook input priority 0 \; policy accept \; }
-    nft add chain inet filter output { type filter hook output priority 0 \; policy accept \; }
-    nft add chain inet filter forward { type filter hook forward priority 0 \; policy accept \; }
-    echo -e "${YELLOW}[!] Firewall disabled${NC}"
+  nft flush ruleset
+  nft add table inet filter
+  nft add chain inet filter input { type filter hook input priority 0\; policy accept\; }
+  nft add chain inet filter output { type filter hook output priority 0\; policy accept\; }
+  nft add chain inet filter forward { type filter hook forward priority 0\; policy accept\; }
+  echo -e "${YELLOW}[!] Фаервол отключён.${NC}"
 }
 
 status() {
-    echo -e "${CYAN}[*] HWOS Firewall Status:${NC}"
-    nft list ruleset 2>/dev/null || echo -e "${RED}No rules loaded${NC}"
-}
-
-enable_service() {
-    cat > /etc/systemd/system/hwos-firewall.service << 'SERVICE'
-[Unit]
-Description=HWOS Firewall (nftables)
-Before=network-pre.target
-Wants=network-pre.target
-DefaultDependencies=no
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/bin/nft -f /etc/nftables.d/hwos.nft
-ExecStop=/usr/bin/nft flush ruleset
-
-[Install]
-WantedBy=multi-user.target
-SERVICE
-
-    systemctl daemon-reload
-    systemctl enable hwos-firewall
-    systemctl start hwos-firewall
-    echo -e "${GREEN}[+] HWOS firewall service enabled${NC}"
+  echo -e "${CYAN}═══════════════════════════════════${NC}"
+  echo -e "${CYAN}  СТАТУС ФАЕРВОЛА HWOS${NC}"
+  echo -e "${CYAN}═══════════════════════════════════${NC}"
+  nft list ruleset 2>/dev/null | head -30 || echo -e "${RED}Нет правил${NC}"
 }
 
 case "${1:-status}" in
-    default|apply)
-        apply_default ;;
-    disable|off|stop)
-        disable ;;
-    status)
-        status ;;
-    enable|service)
-        apply_default
-        enable_service ;;
-    help|--help)
-        echo "Usage: hwos-firewall {default|disable|status|enable}"
-        ;;
-    *)
-        echo "Usage: hwos-firewall {default|disable|status|enable}"
-        exit 1
-        ;;
+  default|apply|enable|on) apply ;;
+  disable|off|stop) disable ;;
+  status) status ;;
+  help)
+    echo "Использование: hwos-firewall {apply|disable|status}"
+    echo "  apply   — Включить защиту"
+    echo "  disable — Отключить фаервол"
+    echo "  status  — Показать правила" ;;
+  *) echo "Использование: hwos-firewall {default|disable|status}"; exit 1 ;;
 esac

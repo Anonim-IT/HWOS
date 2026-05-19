@@ -126,7 +126,7 @@ qemu-desktop
 libvirt
 virt-manager
 
-# Fonts
+# Fonts & Russian
 ttf-hack
 ttf-fira-code
 ttf-firacode-nerd
@@ -135,3 +135,6 @@ noto-fonts
 noto-fonts-emoji
 ttf-dejavu
 ttf-liberation
+# Russian input
+ibus
+ibus-libpinyin

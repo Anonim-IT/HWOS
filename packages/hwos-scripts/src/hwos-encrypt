@@ -1,121 +1,91 @@
 #!/usr/bin/env bash
-# hwos-encrypt - HWOS Encryption Manager
+# hwos-encrypt — Управление шифрованием HWOS
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        exec sudo "$0" "$@"
-    fi
-}
+check_root() { [[ $EUID -eq 0 ]] || exec sudo "$0" "$@"; }
 
 encrypt_disk() {
-    echo -e "${CYAN}[*] HWOS Disk Encryption Tool${NC}"
-    echo -e "${YELLOW}[!] This will encrypt an entire block device with LUKS${NC}"
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}      ${WHITE}ШИФРОВАНИЕ ДИСКА (LUKS)${NC}            ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+  echo -e "${YELLOW}ВНИМАНИЕ: Это удалит ВСЕ данные на диске!${NC}\n"
 
-    local disks=()
-    while IFS= read -r line; do
-        name=$(echo "$line" | awk '{print $4}')
-        size=$(echo "$line" | awk '{print $3}')
-        model=$(echo "$line" | cut -d' ' -f5-)
-        disks+=("$name" "$model ($size)")
-    done < <(lsblk -d -o NAME,SIZE,TYPE,MODEL -n -p 2>/dev/null | grep -E 'sd|nvme|vd')
+  echo -e "${CYAN}Доступные диски:${NC}"
+  lsblk -d -o NAME,SIZE,TYPE,MODEL 2>/dev/null | grep -E 'sd|nvme|vd'
+  echo ""
+  echo -ne "${CYAN}Введите диск для шифрования (например, /dev/sda): ${NC}"
+  read -r DISK
+  [[ ! -b "$DISK" ]] && { echo -e "${RED}Ошибка: $DISK не найден${NC}"; exit 1; }
 
-    if [[ ${#disks[@]} -eq 0 ]]; then
-        echo -e "${RED}[!] No disks found${NC}"
-        exit 1
-    fi
+  echo -ne "${YELLOW}Все данные на $DISK будут удалены. Продолжить? (y/N): ${NC}"
+  read -r CONFIRM
+  [[ "$CONFIRM" != "y" ]] && exit 1
 
-    echo -e "${YELLOW}Available disks:${NC}"
-    lsblk -d -o NAME,SIZE,TYPE,MODEL 2>/dev/null | grep -E 'sd|nvme|vd' || true
+  echo -e "${CYAN}[*] Шифрование $DISK с LUKS2...${NC}"
+  cryptsetup luksFormat --type luks2 --pbkdf argon2id "$DISK"
 
-    echo -ne "${CYAN}Enter disk to encrypt (e.g., /dev/sda): ${NC}"
-    read -r DISK
+  echo -e "${CYAN}[*] Открытие устройства...${NC}"
+  cryptsetup open "$DISK" hwos_crypt
 
-    if [[ ! -b "$DISK" ]]; then
-        echo -e "${RED}[!] Not a block device: $DISK${NC}"
-        exit 1
-    fi
-
-    echo -ne "${YELLOW}This will wipe ALL data on $DISK. Continue? (y/N): ${NC}"
-    read -r CONFIRM
-    [[ "$CONFIRM" != "y" ]] && exit 1
-
-    echo -e "${CYAN}[*] Encrypting $DISK with LUKS...${NC}"
-    cryptsetup luksFormat --type luks2 --pbkdf argon2id "$DISK"
-
-    echo -e "${CYAN}[*] Opening encrypted device...${NC}"
-    cryptsetup open "$DISK" hwos_crypt
-
-    echo -e "${GREEN}[+] Disk encrypted successfully: $DISK${NC}"
-    echo -e "${GREEN}[+] Mapped as: /dev/mapper/hwos_crypt${NC}"
+  echo -e "${GREEN}[+] Диск зашифрован: $DISK${NC}"
+  echo -e "${GREEN}[+] Открыт как: /dev/mapper/hwos_crypt${NC}"
 }
 
-setup_encrypted_container() {
-    echo -e "${CYAN}[*] Creating encrypted container...${NC}"
+setup_container() {
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}      ${WHITE}СОЗДАНИЕ ШИФРОВАННОГО КОНТЕЙНЕРА${NC}   ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}\n"
 
-    echo -ne "${YELLOW}Container file path: ${NC}"
-    read -r CONTAINER_PATH
-    echo -ne "${YELLOW}Size (e.g., 1G, 500M): ${NC}"
-    read -r SIZE
+  echo -ne "${CYAN}Путь к файлу контейнера: ${NC}"
+  read -r CONTAINER_PATH
+  echo -ne "${CYAN}Размер (например, 1G, 500M): ${NC}"
+  read -r SIZE
 
-    dd if=/dev/urandom of="$CONTAINER_PATH" bs=1M count=0 seek="$SIZE" 2>/dev/null
-    cryptsetup luksFormat "$CONTAINER_PATH"
-    cryptsetup open "$CONTAINER_PATH" hwos_container
+  echo -e "${YELLOW}[*] Создание файла контейнера...${NC}"
+  dd if=/dev/urandom of="$CONTAINER_PATH" bs=1M count=0 seek="$SIZE" 2>/dev/null
 
-    mkfs.ext4 /dev/mapper/hwos_container
+  echo -e "${YELLOW}[*] Форматирование с LUKS...${NC}"
+  cryptsetup luksFormat "$CONTAINER_PATH"
 
-    local mount_point="/mnt/hwos_container"
-    mkdir -p "$mount_point"
-    mount /dev/mapper/hwos_container "$mount_point"
+  echo -e "${YELLOW}[*] Открытие...${NC}"
+  cryptsetup open "$CONTAINER_PATH" hwos_container
 
-    echo -e "${GREEN}[+] Container created at $CONTAINER_PATH${NC}"
-    echo -e "${GREEN}[+] Mounted at $mount_point${NC}"
-    echo -e "${GREEN}[+] Size: $SIZE${NC}"
+  mkfs.ext4 /dev/mapper/hwos_container 2>/dev/null
+  local mount_point="/mnt/hwos_container"
+  mkdir -p "$mount_point"
+  mount /dev/mapper/hwos_container "$mount_point"
+
+  echo -e "${GREEN}[+] Контейнер создан: $CONTAINER_PATH${NC}"
+  echo -e "${GREEN}[+] Размер: $SIZE, смонтирован в: $mount_point${NC}"
 }
 
 status() {
-    echo -e "${CYAN}[*] HWOS Encryption Status:${NC}"
-    echo -ne "  Kernel Crypto: "
-    if cryptsetup benchmark 2>/dev/null | head -1 | grep -q "PBKDF2"; then
-        echo -e "${GREEN}Available${NC}"
-    else
-        echo -e "${RED}Unavailable${NC}"
-    fi
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}      ${WHITE}СТАТУС ШИФРОВАНИЯ${NC}                  ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 
-    echo -e "\n  Active LUKS Devices:"
-    lsblk -o NAME,TYPE,FSTYPE,SIZE 2>/dev/null | grep -E "crypto_LUKS|NAME" || echo -e "    ${YELLOW}None${NC}"
+  echo -e "\n${CYAN}Активные LUKS-устройства:${NC}"
+  lsblk -o NAME,TYPE,FSTYPE,SIZE 2>/dev/null | grep -E "crypto_LUKS|NAME" ||
+    echo -e "  ${YELLOW}Нет зашифрованных устройств${NC}"
 
-    echo -e "\n  Active Mappings:"
-    dmsetup ls --target crypt 2>/dev/null | head -20 || echo -e "    ${YELLOW}None${NC}"
+  echo -e "\n${CYAN}Открытые LUKS-контейнеры:${NC}"
+  dmsetup ls --target crypt 2>/dev/null | head -20 ||
+    echo -e "  ${YELLOW}Нет открытых контейнеров${NC}"
 }
 
 case "${1:-status}" in
-    disk|encrypt)
-        check_root
-        encrypt_disk
-        ;;
-    container)
-        check_root
-        setup_encrypted_container
-        ;;
-    status)
-        status
-        ;;
-    help)
-        echo "Usage: hwos-encrypt {disk|container|status}"
-        echo ""
-        echo "  disk       - Encrypt a block device with LUKS"
-        echo "  container  - Create an encrypted file container"
-        echo "  status     - Show encryption status"
-        ;;
-    *)
-        echo "Usage: hwos-encrypt {disk|container|status}"
-        exit 1
-        ;;
+  disk|encrypt) check_root; encrypt_disk ;;
+  container) check_root; setup_container ;;
+  status) status ;;
+  help)
+    echo "Использование: hwos-encrypt {disk|container|status}"
+    echo ""
+    echo "  disk       — Зашифровать диск LUKS"
+    echo "  container  — Создать шифрованный контейнер"
+    echo "  status     — Показать статус шифрования" ;;
+  *)
+    echo "Использование: hwos-encrypt {disk|container|status}"
+    exit 1 ;;
 esac
