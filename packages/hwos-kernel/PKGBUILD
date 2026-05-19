@@ -1,13 +1,14 @@
 # Maintainer: HWOS Team <dev@hwos.dev>
-# Custom HWOS kernel based on Linux 6.1 LTS with hardening patches
+# Hacker-Kernel — кастомное ядро HWOS на базе Linux 6.1 LTS с патчами безопасности
+# Сделано в Санкт-Петербурге ❤️
 
-_kernelname=-hwos
+_kernelname=-hacker
 _kernelver=6.1.100
 _kernelver_major=6.1
-pkgbase=linux-6.1-hwos
+pkgbase=linux-hacker
 pkgver=${_kernelver}.arch1
 pkgrel=1
-pkgdesc="HWOS custom kernel - Linux 6.1 LTS hardened for Hacker Web OS"
+pkgdesc="Hacker-Kernel — custom Linux 6.1 LTS hardened for Hacker Web OS"
 arch=('x86_64')
 url="https://hwos.dev"
 license=('GPL2')
@@ -24,8 +25,8 @@ source=(
   "config"
 )
 validpgpkeys=(
-  'ABAF11C65A2970B130ABE3C479BE3E4300411886'  # Linus Torvalds
-  '647F28654894E3BD457199BE38DBBDC86092693E'  # Greg Kroah-Hartman
+  'ABAF11C65A2970B130ABE3C479BE3E4300411886'
+  '647F28654894E3BD457199BE38DBBDC86092693E'
 )
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
 
@@ -52,15 +53,4 @@ package() {
 
   mkdir -p "${pkgdir}/usr/share/doc/${pkgbase}"
   cp Documentation/output/* "${pkgdir}/usr/share/doc/${pkgbase}/" 2>/dev/null || true
-}
-
-_kernelheaders() {
-  pkgdesc="HWOS kernel headers for Linux 6.1 LTS"
-  depends=('awk' 'libelf' 'tar' 'perl' 'python')
-  pkgname=linux-6.1-hwos-headers
-}
-
-_kerneldocs() {
-  pkgdesc="HWOS kernel documentation for Linux 6.1 LTS"
-  pkgname=linux-6.1-hwos-docs
 }

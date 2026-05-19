@@ -3,13 +3,11 @@
   "logo": {
     "source": "/usr/share/hwos/fastfetch/logo.txt",
     "color": {
-      "1": "cyan",
-      "2": "green"
+      "1": "white",
+      "2": "blue",
+      "3": "red"
     },
-    "padding": {
-      "left": 1,
-      "right": 1
-    }
+    "padding": { "left": 1, "right": 1 }
   },
   "display": {
     "separator": " ${custom}",
@@ -18,100 +16,21 @@
   "modules": [
     "title",
     "separator",
-    {
-      "type": "os",
-      "key": "OS",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "host",
-      "key": "Host",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "kernel",
-      "key": "Kernel",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "uptime",
-      "key": "Uptime",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "packages",
-      "key": "Packages",
-      "keyColor": "green",
-      "format": "{1} ({2})"
-    },
-    {
-      "type": "shell",
-      "key": "Shell",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "de",
-      "key": "DE",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "wm",
-      "key": "WM",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "terminal",
-      "key": "Terminal",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "cpu",
-      "key": "CPU",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "gpu",
-      "key": "GPU",
-      "keyColor": "green",
-      "format": "{1}"
-    },
-    {
-      "type": "memory",
-      "key": "Memory",
-      "keyColor": "green",
-      "format": "{1} / {2}"
-    },
-    {
-      "type": "disk",
-      "key": "Disk",
-      "keyColor": "green",
-      "format": "{1} / {2} ({3})"
-    },
-    {
-      "type": "localip",
-      "key": "IP",
-      "keyColor": "green",
-      "format": "{1} ({2})"
-    },
-    {
-      "type": "bluetooth",
-      "key": "BT",
-      "keyColor": "green",
-      "format": "{1}"
-    },
+    { "type": "os", "key": "ОС", "keyColor": "white", "format": "{1}" },
+    { "type": "host", "key": "Устройство", "keyColor": "blue", "format": "{1}" },
+    { "type": "kernel", "key": "Ядро", "keyColor": "red", "format": "{1}" },
+    { "type": "uptime", "key": "Работает", "keyColor": "white", "format": "{1}" },
+    { "type": "packages", "key": "Пакеты", "keyColor": "blue", "format": "{1} ({2})" },
+    { "type": "shell", "key": "Оболочка", "keyColor": "red", "format": "{1}" },
+    { "type": "wm", "key": "Окружение", "keyColor": "white", "format": "{1}" },
+    { "type": "terminal", "key": "Терминал", "keyColor": "blue", "format": "{1}" },
+    { "type": "cpu", "key": "Процессор", "keyColor": "red", "format": "{1}" },
+    { "type": "gpu", "key": "Видеокарта", "keyColor": "white", "format": "{1}" },
+    { "type": "memory", "key": "Память", "keyColor": "blue", "format": "{1} / {2}" },
+    { "type": "disk", "key": "Диск", "keyColor": "red", "format": "{1} / {2} ({3})" },
+    { "type": "localip", "key": "IP", "keyColor": "white", "format": "{1} ({2})" },
     "separator",
-    {
-      "type": "custom",
-      "format": "Stay anonymous. Stay sharp. Be the ghost."
-    }
+    { "type": "custom", "format": "Сделано в Санкт-Петербурге ❤️" },
+    { "type": "custom", "format": "hwos-help — список команд" }
   ]
 }

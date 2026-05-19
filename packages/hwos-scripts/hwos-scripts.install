@@ -1,6 +1,7 @@
 post_install() {
     echo "HWOS system scripts installed"
     echo "Run 'hwos-help' to see available commands"
+    echo "Run 'hwos-region' to switch between Russia/International mode"
 }
 
 post_upgrade() {

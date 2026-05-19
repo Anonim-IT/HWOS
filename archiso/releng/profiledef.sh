@@ -3,7 +3,7 @@ set -e -u
 
 iso_name=hwos
 iso_label="HWOS_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
-iso_publisher="Hacker Web OS <https://hwos.dev>"
+iso_publisher="Hacker Web OS — Сделано в Санкт-Петербурге <https://hwos.dev>"
 iso_application="Hacker Web OS Live/Rescue DVD"
 iso_version=$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y.%m.%d)
 install_dir=hwos

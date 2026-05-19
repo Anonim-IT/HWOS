@@ -1,17 +1,17 @@
 # Maintainer: HWOS Team <dev@hwos.dev>
 pkgname=hwos-installer
 pkgver=1.0.0
-pkgrel=1
-pkgdesc="HWOS Dialog-based system installer for Hacker Web OS"
+pkgrel=2
+pkgdesc="HWOS TUI installer (Python curses) for Hacker Web OS — Сделано в Санкт-Петербурге"
 arch=('any')
 url="https://hwos.dev"
 license=('GPL3')
-depends=('bash' 'dialog' 'parted' 'btrfs-progs' 'cryptsetup' 'arch-install-scripts')
+depends=('python' 'parted' 'btrfs-progs' 'cryptsetup' 'arch-install-scripts' 'dosfstools')
 install=hwos-installer.install
-source=("src/hwos-installer.sh")
+source=("src/hwos-installer")
 sha256sums=('SKIP')
 
 package() {
-    install -Dm755 src/hwos-installer.sh "${pkgdir}/usr/local/bin/hwos-installer"
-    install -Dm644 "${srcdir}/../hwos-installer.conf" "${pkgdir}/etc/hwos-installer.conf" 2>/dev/null || true
+    install -Dm755 src/hwos-installer "${pkgdir}/usr/local/bin/hwos-installer"
+    ln -sf /usr/local/bin/hwos-installer "${pkgdir}/usr/bin/hwos-installer"
 }

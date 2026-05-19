@@ -11,6 +11,7 @@ cat <<WELCOME
 ${CYAN}╔══════════════════════════════════════════════════════╗${NC}
 ${CYAN}║${WHITE}${BOLD}              ДОБРО ПОЖАЛОВАТЬ В HWOS!${NC}              ${CYAN}║${NC}
 ${CYAN}║${NC}    ${GREEN}Hacker Web OS v${HWOS_VERSION}${NC}                         ${CYAN}║${NC}
+${CYAN}║${NC}    ${WHITE}Сделано в Санкт-Петербурге ❤️${NC}                ${CYAN}║${NC}
 ${CYAN}║${NC}                                                  ${CYAN}║${NC}
 ${CYAN}║${NC}  ${WHITE}HWOS — это простая и понятная система на базе Arch.${NC} ${CYAN}║${NC}
 ${CYAN}║${NC}  ${WHITE}Всё уже настроено и готово к работе!${NC}               ${CYAN}║${NC}
@@ -34,6 +35,7 @@ ${CYAN}║${NC}  ${GREEN}hwos-update${NC}    — обновить систему
 ${CYAN}║${NC}  ${GREEN}hwos-installer${NC} — установить HWOS на другой ПК  ${CYAN}║${NC}
 ${CYAN}║${NC}  ${GREEN}hwos-encrypt${NC}   — зашифровать диск/файл         ${CYAN}║${NC}
 ${CYAN}║${NC}  ${GREEN}hwos-firewall${NC}  — настроить фаервол             ${CYAN}║${NC}
+${CYAN}║${NC}  ${GREEN}hwos-region${NC}    — 🇷🇺🇷🇺/🌍 переключить регион     ${CYAN}║${NC}
 ${CYAN}║${NC}  ${GREEN}hwfetch${NC}        — показать информацию о системе ${CYAN}║${NC}
 ${CYAN}║${NC}  ${GREEN}hwins${NC}          — установить программы           ${CYAN}║${NC}
 ${CYAN}║${NC}                                                  ${CYAN}║${NC}
@@ -65,6 +67,10 @@ ${CYAN}║${NC}                                                  ${CYAN}║${NC}
 ${CYAN}║${NC}  ${GREEN}🔄 Обновления${NC}                                     ${CYAN}║${NC}
 ${CYAN}║${NC}     hwos-update all — полное обновление системы  ${CYAN}║${NC}
 ${CYAN}║${NC}                                                  ${CYAN}║${NC}
+${CYAN}║${NC}  ${YELLOW}🌍 Переключение региона:${NC}                              ${CYAN}║${NC}
+${CYAN}║${NC}     hwos-region ru   — 🇷🇺 Россия (mirror.yandex.ru)     ${CYAN}║${NC}
+${CYAN}║${NC}     hwos-region int  — 🌍 Международный                   ${CYAN}║${NC}
+${CYAN}║${NC}                                                  ${CYAN}║${NC}
 ${CYAN}║${NC}  ${YELLOW}💡 HWOS использует Hacker Shell — нашу            ${CYAN}║${NC}
 ${CYAN}║${NC}  ${YELLOW}   собственную оболочку с автодополнением и       ${CYAN}║${NC}
 ${CYAN}║${NC}  ${YELLOW}   цветным промптом. Пишите команды как обычно!   ${CYAN}║${NC}
@@ -81,6 +87,7 @@ cat <<GOODBYE
 ${GREEN}╔══════════════════════════════════════════════════════╗${NC}
 ${GREEN}║${NC}                                                  ${GREEN}║${NC}
 ${GREEN}║${NC}     ${WHITE}HWOS готов к работе! Приятного использования!${NC}   ${GREEN}║${NC}
+${GREEN}║${NC}     ${WHITE}Сделано в Санкт-Петербурге ❤️${NC}                    ${GREEN}║${NC}
 ${GREEN}║${NC}                                                  ${GREEN}║${NC}
 ${GREEN}║${NC}     ${WHITE}Возник вопрос? Наберите:${NC} ${CYAN}hwos-help${NC}            ${GREEN}║${NC}
 ${GREEN}║${NC}                                                  ${GREEN}║${NC}

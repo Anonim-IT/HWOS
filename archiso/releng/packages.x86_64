@@ -1,8 +1,8 @@
 # HWOS Base Packages
 base
 base-devel
-linux-6.1
-linux-6.1-headers
+linux-hacker
+linux-hacker-headers
 linux-firmware
 amd-ucode
 intel-ucode
@@ -47,7 +47,6 @@ i3status
 dmenu
 sway
 swaybg
-waybar
 wofi
 foot
 

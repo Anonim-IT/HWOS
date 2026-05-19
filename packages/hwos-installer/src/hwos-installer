@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+# HWOS Installer — TUI (Python curses)
+# Сделано в Санкт-Петербурге ❤️
+import curses
+import curses.textpad
+import os
+import subprocess
+import sys
+import shutil
+import time
+import re
+from typing import Optional
+
+VERSION = "1.0.0"
+LANG = os.environ.get("LANG", "ru_RU.UTF-8")
+IS_RU = LANG.startswith("ru")
+
+def _(ru: str, en: str = "") -> str:
+    return ru if IS_RU else (en or ru)
+
+# ─── Colors ────────────────────────────────────────────────────
+C_WHITE = 1
+C_BLUE = 2
+C_RED = 3
+C_CYAN = 4
+C_GREEN = 5
+C_YELLOW = 6
+C_DIM = 7
+C_TITLE = 8
+
+def init_colors():
+    curses.init_pair(C_WHITE, curses.COLOR_WHITE, -1)
+    curses.init_pair(C_BLUE, curses.COLOR_BLUE, -1)
+    curses.init_pair(C_RED, curses.COLOR_RED, -1)
+    curses.init_pair(C_CYAN, curses.COLOR_CYAN, -1)
+    curses.init_pair(C_GREEN, curses.COLOR_GREEN, -1)
+    curses.init_pair(C_YELLOW, curses.COLOR_YELLOW, -1)
+    curses.init_pair(C_DIM, curses.COLOR_WHITE, -1)
+    curses.init_pair(C_TITLE, curses.COLOR_CYAN, -1)
+
+def c(pair: int, bold: bool = False):
+    attr = curses.color_pair(pair)
+    if bold:
+        attr |= curses.A_BOLD
+    return attr
+
+# ─── UI helpers ────────────────────────────────────────────────
+def center_y(h: int) -> int:
+    return max(0, (curses.LINES - h) // 2)
+
+def center_x(w: int) -> int:
+    return max(0, (curses.COLS - w) // 2)
+
+def draw_border(win, title: str = "", color_pair: int = C_CYAN):
+    h, w = win.getmaxyx()
+    win.attron(c(color_pair))
+    win.border()
+    if title:
+        win.addstr(0, center_x(len(title) + 2), f" {title} ", c(color_pair, True))
+    win.attroff(c(color_pair))
+
+def draw_header(stdscr):
+    hdr = f" HWOS Installer v{VERSION} — Сделано в Санкт-Петербурге "
+    stdscr.attron(c(C_WHITE, True) | curses.A_REVERSE)
+    stdscr.addstr(0, 0, hdr.center(curses.COLS))
+    stdscr.attroff(c(C_WHITE, True) | curses.A_REVERSE)
+
+def msgbox(stdscr, title: str, text: str, width: int = 60, height: int = 8):
+    h = height
+    w = min(width, curses.COLS - 4)
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if i + 1 < h - 1:
+            win.addstr(i + 1, 2, line[: w - 4], c(C_WHITE))
+    win.addstr(h - 2, center_x(12), _("[ Enter ]", "[ OK ]"), c(C_GREEN, True))
+    win.refresh()
+    stdscr.getch()
+
+def yesno(stdscr, title: str, text: str, width: int = 60, height: int = 8) -> bool:
+    h = height
+    w = min(width, curses.COLS - 4)
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if i + 1 < h - 3:
+            win.addstr(i + 1, 2, line[: w - 4], c(C_WHITE))
+    sel = 1
+    while True:
+        for i, lbl in enumerate([_("[ Нет ]", " [ No ] "), _("[ Да ]", " [ Yes ] ")]):
+            attr = c(C_GREEN, True) | curses.A_REVERSE if i == sel else c(C_GREEN, True)
+            win.addstr(h - 2, center_x(18) + i * 12, lbl, attr)
+        win.refresh()
+        k = stdscr.getch()
+        if k == curses.KEY_LEFT and sel > 0:
+            sel -= 1
+        elif k == curses.KEY_RIGHT and sel < 1:
+            sel += 1
+        elif k in (10, 13, ord(" ")):
+            return sel == 1
+        elif k == 27:
+            return False
+
+def inputbox(stdscr, title: str, prompt: str, default: str = "", width: int = 50) -> Optional[str]:
+    h, w = 8, min(width + 4, curses.COLS - 2)
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    win.addstr(1, 2, prompt[: w - 4], c(C_WHITE, True))
+    edit_h, edit_w = 1, w - 6
+    edit_win = curses.newwin(edit_h, edit_w, y + 3, x + 2)
+    tb = curses.textpad.Textbox(edit_win)
+    tb.stripspaces = 1
+    edit_win.addstr(0, 0, default[: edit_w - 1], c(C_WHITE))
+    curses.curs_set(1)
+    result = tb.edit()
+    curses.curs_set(0)
+    return result.strip() if result else None
+
+def passwordbox(stdscr, title: str, prompt: str, width: int = 50) -> Optional[str]:
+    h, w = 8, min(width + 4, curses.COLS - 2)
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    win.addstr(1, 2, prompt[: w - 4], c(C_WHITE, True))
+    curses.curs_set(1)
+    buf = ""
+    while True:
+        ch = stdscr.getch()
+        if ch in (10, 13):
+            break
+        elif ch in (127, curses.KEY_BACKSPACE, 8):
+            if buf:
+                buf = buf[:-1]
+                cy, cx = win.getyx()
+                win.addstr(y + 3, x + 2 + len(buf), " ")
+        elif ch == 27:
+            curses.curs_set(0)
+            return None
+        elif 32 <= ch <= 126:
+            buf += chr(ch)
+        win.addstr(3, 2, "*" * len(buf), c(C_WHITE))
+        win.refresh()
+    curses.curs_set(0)
+    return buf
+
+def menu(stdscr, title: str, prompt: str, items: list, width: int = 60) -> Optional[int]:
+    n = len(items)
+    list_h = n + 2
+    h = min(list_h + 4, curses.LINES - 4)
+    w = min(width, curses.COLS - 4)
+    y = center_y(h)
+    x = center_x(w)
+    sel = 0
+    offset = 0
+    max_visible = max(1, h - 5)
+    while True:
+        win = curses.newwin(h, w, y, x)
+        win.clear()
+        draw_border(win, title, C_CYAN)
+        if prompt:
+            win.addstr(1, 2, prompt[: w - 4], c(C_DIM))
+        if offset > 0:
+            win.addstr(2, w - 2, "▲", c(C_DIM))
+        visible = min(n - offset, max_visible)
+        for i in range(visible):
+            idx = offset + i
+            lbl = items[idx] if isinstance(items[idx], str) else str(items[idx])
+            lbl = lbl[: w - 6]
+            if idx == sel:
+                win.attron(c(C_GREEN, True) | curses.A_REVERSE)
+                win.addstr(i + 2, 2, f" {lbl} ".ljust(w - 5))
+                win.attroff(c(C_GREEN, True) | curses.A_REVERSE)
+            else:
+                win.addstr(i + 2, 2, f" {lbl} ".ljust(w - 5), c(C_WHITE))
+        if offset + visible < n:
+            win.addstr(h - 2, w - 2, "▼", c(C_DIM))
+        win.refresh()
+        k = stdscr.getch()
+        if k == curses.KEY_UP and sel > 0:
+            sel -= 1
+            if sel < offset:
+                offset = sel
+        elif k == curses.KEY_DOWN and sel < n - 1:
+            sel += 1
+            if sel >= offset + max_visible:
+                offset = min(sel, n - max_visible)
+        elif k in (10, 13, ord(" ")):
+            return sel
+        elif k == 27:
+            return None
+
+def progress(stdscr, title: str, text: str, total: int = 100):
+    h, w = 6, 60
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    win.addstr(1, 2, text[: w - 4], c(C_WHITE))
+    win.refresh()
+    return win, w
+
+def update_progress(win, w, pct: int):
+    bar_w = w - 6
+    filled = int(bar_w * pct / 100)
+    bar = "█" * filled + "░" * (bar_w - filled)
+    win.addstr(3, 2, bar[: w - 4], c(C_CYAN, True))
+    win.addstr(3, 2 + bar_w + 1, f"{pct}%", c(C_GREEN, True))
+    win.refresh()
+
+# ─── System helpers ────────────────────────────────────────────
+def run(cmd: list, check: bool = True, **kwargs):
+    return subprocess.run(cmd, check=check, **kwargs)
+
+def run_capture(cmd: list) -> str:
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    return r.stdout.strip()
+
+def check_root():
+    if os.geteuid() != 0:
+        print(_("Требуются права root. Запустите с sudo.", "Root required. Run with sudo."))
+        sys.exit(1)
+
+def get_disks() -> list:
+    out = run_capture(["lsblk", "-dno", "NAME,SIZE,MODEL"])
+    disks = []
+    for line in out.split("\n"):
+        parts = line.split(None, 2)
+        if parts:
+            name = parts[0]
+            size = parts[1] if len(parts) > 1 else ""
+            model = parts[2] if len(parts) > 2 else ""
+            disks.append((f"/dev/{name}", f"{size}  {model}"))
+    return disks
+
+def detect_partitions(disk: str):
+    out = run_capture(["lsblk", "-nlo", "NAME,TYPE,FSTYPE", disk])
+    esp, swap, root = "", "", ""
+    for line in out.split("\n"):
+        parts = line.split()
+        if len(parts) < 3:
+            continue
+        name, typ, fstype = parts[0], parts[1], parts[2]
+        dev = f"/dev/{name}"
+        if typ != "part":
+            continue
+        if fstype in ("vfat", "fat32") or "esp" in name.lower():
+            esp = dev
+        elif fstype == "swap":
+            swap = dev
+        elif not root:
+            root = dev
+    if not esp:
+        esp = f"/dev/{run_capture(['lsblk', '-nlo', 'NAME', disk]).split()[0]}"
+    if not root:
+        parts = [l.split()[0] for l in out.split("\n") if "part" in l]
+        if parts:
+            root = f"/dev/{parts[-1]}"
+    return esp, swap, root
+
+def step(stdscr, title: str, text: str, pct: int):
+    h, w = 6, 60
+    y = center_y(h)
+    x = center_x(w)
+    win = curses.newwin(h, w, y, x)
+    win.clear()
+    draw_border(win, title, C_CYAN)
+    win.addstr(1, 2, text[: w - 4], c(C_WHITE))
+    update_progress(win, w, pct)
+    win.refresh()
+    return win
+
+def run_step(win, w, cmd: list, label: str):
+    win.addstr(2, 2, label[: w - 4], c(C_YELLOW))
+    win.refresh()
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode != 0:
+        return False, r.stderr
+    return True, ""
+
+def chroot(cmd: list):
+    return run(["arch-chroot", "/mnt"] + cmd, check=False, capture_output=True, text=True)
+
+# ─── Installer steps ──────────────────────────────────────────
+def select_region(stdscr) -> str:
+    items = [
+        (_("🇷🇺 Россия — русский, Яндекс-зеркала"), "ru"),
+        (_("🌍 Международный — английский, глобальные"), "int"),
+    ]
+    idx = menu(stdscr, _("Выбор региона", "Region"), _("Где будет использоваться HWOS?", "Where will HWOS be used?"), [i[0] for i in items])
+    if idx is None:
+        return "ru"
+    return items[idx][1]
+
+def select_lang(stdscr):
+    items = [_("Русский"), "English"]
+    idx = menu(stdscr, _("Язык установщика", "Installer Language"), "", items)
+    if idx is not None:
+        global LANG, IS_RU
+        LANG = "ru_RU.UTF-8" if idx == 0 else "en_US.UTF-8"
+        IS_RU = idx == 0
+        os.environ["LANG"] = LANG
+
+def select_mode(stdscr) -> str:
+    items = [
+        (_("Для новичков — авторазметка, всё само"), "easy"),
+        (_("Эксперт — ручные разделы через cfdisk"), "expert"),
+    ]
+    idx = menu(stdscr, _("Режим установки", "Mode"), "", [i[0] for i in items])
+    return items[idx][1] if idx is not None else "easy"
+
+def select_disk_menu(stdscr) -> str:
+    disks = get_disks()
+    if not disks:
+        msgbox(stdscr, _("Ошибка", "Error"), _("Не найден ни один диск!", "No disks found!"))
+        return ""
+    items = [f"{d[0]}  [{d[1]}]" for d in disks]
+    idx = menu(stdscr, _("Выбор диска", "Select Disk"), _("Выберите целевой диск:", "Select target disk:"), items)
+    return disks[idx][0] if idx is not None else ""
+
+def get_user_info(stdscr):
+    uname = inputbox(stdscr, _("Пользователь", "User"), _("Введите имя пользователя:", "Enter username:"), "user")
+    if not uname:
+        return None, None, None
+    pw = passwordbox(stdscr, _("Пароль", "Password"), _("Введите пароль:", "Enter password:"))
+    if not pw:
+        return None, None, None
+    hn = inputbox(stdscr, _("Имя ПК", "Hostname"), _("Имя компьютера (hostname):", "Computer hostname:"), "hwos")
+    if not hn:
+        hn = "hwos"
+    return uname, pw, hn
+
+def do_install(stdscr, disk: str, mode: str, region: str, username: str, password: str, hostname: str):
+    # Partition
+    w = None
+    if mode == "easy":
+        win, w = progress(stdscr, _("Авторазметка", "Partitioning"), _("Размечаем диск...", "Partitioning disk..."))
+        parted_ok, err = run_step(win, w, ["parted", "-s", disk, "mklabel", "gpt"], "mklabel")
+        run_step(win, w, ["parted", "-s", disk, "mkpart", "primary", "fat32", "1MiB", "512MiB"], "ESP")
+        run_step(win, w, ["parted", "-s", disk, "set", "1", "esp", "on"], "ESP flag")
+        swap_mb = int(run_capture(["free", "-m"]).split("\n")[1].split()[1]) // 2
+        swap_end = swap_mb + 4096
+        run_step(win, w, ["parted", "-s", disk, "mkpart", "primary", "linux-swap", "512MiB", f"{swap_end}MiB"], "SWAP")
+        run_step(win, w, ["parted", "-s", disk, "mkpart", "primary", f"{swap_end}MiB", "100%"], "ROOT")
+        time.sleep(1)
+    else:
+        msgbox(stdscr, _("Ручная разметка", "Manual"), _("Сейчас откроется cfdisk.\nСоздайте: ESP(fat32,512M), SWAP(linux-swap,2-4G), ROOT(ext4).\nЗакройте cfdisk когда закончите.", "cfdisk will open.\nCreate: ESP(fat32,512M), SWAP, ROOT.\nClose when done."))
+        run(["cfdisk", disk], check=False)
+
+    # Detect partitions
+    esp, swap, root = detect_partitions(disk)
+
+    # Confirm format
+    if not yesno(stdscr, _("Форматирование", "Format"), _(
+        f"Будут отформатированы:\n  ESP: {esp}\n  ROOT: {root}\n\nВсе данные будут УНИЧТОЖЕНЫ!",
+        f"Will format:\n  ESP: {esp}\n  ROOT: {root}\n\nALL data will be DESTROYED!")):
+        return
+
+    # Format
+    win, w = progress(stdscr, _("Форматирование", "Formatting"), _("Форматируем разделы...", "Formatting partitions..."))
+    run_step(win, w, ["mkfs.fat", "-F32", esp], "mkfs.fat ESP")
+    run_step(win, w, ["mkfs.ext4", "-F", root], "mkfs.ext4 ROOT")
+    if swap:
+        run_step(win, w, ["mkswap", swap], "mkswap SWAP")
+
+    # Mount
+    win.addstr(2, 2, _("Монтируем разделы...", "Mounting partitions..."), c(C_YELLOW))
+    win.refresh()
+    run(["mount", root, "/mnt"])
+    os.makedirs("/mnt/boot", exist_ok=True)
+    run(["mount", esp, "/mnt/boot"])
+    if swap:
+        run(["swapon", swap], check=False)
+
+    # Pacstrap
+    pkgs = [
+        "base", "base-devel",
+        "linux-hacker", "linux-hacker-headers", "linux-firmware",
+        "grub", "efibootmgr",
+        "networkmanager", "dhcpcd", "nano", "vim", "sudo", "dialog",
+        "hwins", "hackerrub", "hwos-scripts", "hwos-configs", "hwos-theme",
+    ]
+    if region == "ru":
+        pkgs += ["ttf-liberation", "ttf-dejavu", "noto-fonts", "noto-fonts-emoji"]
+
+    # Mirrorlist
+    if region == "ru":
+        ml = "Server = https://mirror.yandex.ru/archlinux/$repo/os/$arch\nServer = https://archlinux.mirror.colo-serv.net/$repo/os/$arch"
+    else:
+        ml = "Server = https://archlinux.mirror.colo-serv.net/$repo/os/$arch\nServer = https://mirror.rackspace.com/archlinux/$repo/os/$arch"
+
+    win.addstr(2, 2, _("Устанавливаем пакеты (pacstrap)...", "Installing packages (pacstrap)..."), c(C_YELLOW))
+    win.refresh()
+    os.makedirs("/mnt/etc/pacman.d", exist_ok=True)
+    with open("/mnt/etc/pacman.d/mirrorlist", "w") as f:
+        f.write("## HWOS\n" + ml + "\n")
+    update_progress(win, w, 10)
+
+    r = subprocess.run(["pacstrap", "-K", "/mnt"] + pkgs, capture_output=True, text=True)
+    if r.returncode != 0:
+        msgbox(stdscr, _("Ошибка", "Error"), _("Pacstrap не удался:\n", "Pacstrap failed:\n") + (r.stderr[-300:] if r.stderr else ""))
+        return
+    update_progress(win, w, 60)
+
+    # Configure
+    win.addstr(2, 2, _("Настраиваем систему...", "Configuring system..."), c(C_YELLOW))
+    win.refresh()
+
+    # fstab
+    run(["genfstab", "-U", "/mnt"], stdout=open("/mnt/etc/fstab", "a"))
+    update_progress(win, w, 65)
+
+    # locale
+    with open("/mnt/etc/locale.gen", "w") as f:
+        f.write("ru_RU.UTF-8 UTF-8\nen_US.UTF-8 UTF-8\n")
+    if region == "ru":
+        with open("/mnt/etc/locale.conf", "w") as f:
+            f.write("LANG=ru_RU.UTF-8\n")
+        with open("/mnt/etc/vconsole.conf", "w") as f:
+            f.write("KEYMAP=ru\nFONT=cyr-sun16\n")
+        chroot(["ln", "-sf", "/usr/share/zoneinfo/Europe/Moscow", "/etc/localtime"])
+    else:
+        with open("/mnt/etc/locale.conf", "w") as f:
+            f.write("LANG=en_US.UTF-8\n")
+        with open("/mnt/etc/vconsole.conf", "w") as f:
+            f.write("KEYMAP=us\n")
+        chroot(["ln", "-sf", "/usr/share/zoneinfo/UTC", "/etc/localtime"])
+    chroot(["locale-gen"])
+    update_progress(win, w, 70)
+
+    # hostname
+    with open("/mnt/etc/hostname", "w") as f:
+        f.write(hostname + "\n")
+    with open("/mnt/etc/hosts", "w") as f:
+        f.write(f"127.0.0.1   localhost\n::1         localhost\n127.0.1.1   {hostname}\n")
+    update_progress(win, w, 75)
+
+    # user
+    chroot(["useradd", "-m", "-G", "wheel,audio,video,storage", "-s", "/bin/bash", username])
+    r = chroot(["chpasswd"])
+    with open("/tmp/pw", "w") as f:
+        f.write(f"{username}:{password}\n")
+    run(["arch-chroot", "/mnt", "chpasswd"], stdin=open("/tmp/pw"))
+    run(["arch-chroot", "/mnt", "sh", "-c", "echo 'root:root' | chpasswd"])
+    os.makedirs("/mnt/etc/sudoers.d", exist_ok=True)
+    with open("/mnt/etc/sudoers.d/wheel", "w") as f:
+        f.write("%wheel ALL=(ALL:ALL) ALL\n")
+    update_progress(win, w, 80)
+
+    # GRUB (HackerRUB)
+    run(["arch-chroot", "/mnt", "grub-install",
+         "--target=x86_64-efi", "--efi-directory=/boot",
+         "--bootloader-id=HackerRUB", "--recheck"], check=False)
+    update_progress(win, w, 85)
+
+    grub_cfg = """GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="HWOS — Сделано в Санкт-Петербурге"
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet nowatchdog"
+GRUB_TERMINAL_OUTPUT="gfxterm"
+GRUB_GFXMODE="1920x1080,1280x720,auto"
+GRUB_THEME="/boot/grub/themes/hackerrub/theme.txt"
+GRUB_DISABLE_OS_PROBER=false
+GRUB_DISABLE_RECOVERY=true
+GRUB_SAVEDEFAULT=true
+"""
+    with open("/mnt/etc/default/grub", "w") as f:
+        f.write(grub_cfg)
+    run(["arch-chroot", "/mnt", "grub-mkconfig", "-o", "/boot/grub/grub.cfg"], check=False)
+    update_progress(win, w, 90)
+
+    # Services
+    chroot(["systemctl", "enable", "NetworkManager"])
+    chroot(["systemctl", "enable", "systemd-timesyncd"])
+    update_progress(win, w, 100)
+
+    time.sleep(0.5)
+
+def main(stdscr):
+    curses.curs_set(0)
+    init_colors()
+    stdscr.clear()
+    stdscr.refresh()
+    draw_header(stdscr)
+
+    # Splash
+    splash_h, splash_w = 14, 60
+    sy, sx = center_y(splash_h), center_x(splash_w)
+    splash = curses.newwin(splash_h, splash_w, sy, sx)
+    splash.clear()
+    draw_border(splash, _("HWOS Installer", "HWOS Installer"), C_CYAN)
+    logo = [
+        "  ██╗  ██╗██╗    ██╗ ██████╗ ███████╗",
+        "  ██║  ██║██║    ██║██╔═══██╗██╔════╝",
+        "  ███████║██║ █╗ ██║██║   ██║███████╗",
+        "  ██╔══██║██║███╗██║██║   ██║╚════██║",
+        "  ██║  ██║╚███╔███╔╝╚██████╔╝███████║",
+        "  ╚═╝  ╚═╝ ╚══╝╚══╝  ╚═════╝ ╚══════╝",
+    ]
+    for i, line in enumerate(logo):
+        splash.addstr(i + 1, 2, line, c(C_CYAN, True))
+    splash.addstr(8, 2, _("  Hacker Web OS — Сделано в Санкт-Петербурге", "  Hacker Web OS — Made in Saint Petersburg"), c(C_WHITE, True))
+    splash.addstr(10, center_x(20), _("[ Нажмите Enter ]", "[ Press Enter ]"), c(C_GREEN, True))
+    splash.refresh()
+    stdscr.getch()
+
+    # Steps
+    region = select_region(stdscr)
+    select_lang(stdscr)
+    mode = select_mode(stdscr)
+    disk = select_disk_menu(stdscr)
+    if not disk:
+        return
+    uname, pw, hn = get_user_info(stdscr)
+    if not uname:
+        return
+
+    # Confirm
+    summary = _(
+        f"Регион: {region}\nРежим: {mode}\nДиск: {disk}\nПользователь: {uname}\nПК: {hn}\n\nНачать установку?",
+        f"Region: {region}\nMode: {mode}\nDisk: {disk}\nUser: {uname}\nHost: {hn}\n\nStart installation?")
+    if not yesno(stdscr, _("Подтверждение", "Confirm"), summary):
+        return
+
+    do_install(stdscr, disk, mode, region, uname, pw, hn)
+
+    msgbox(stdscr, _("Готово!", "Done!"), _(
+        "HWOS установлена!\nРегион: {region}\nПользователь: {uname}\n\nСделано в Санкт-Петербурге ❤️",
+        "HWOS is installed!\nRegion: {region}\nUser: {uname}\n\nMade in Saint Petersburg ❤️"))
+
+    if yesno(stdscr, _("Перезагрузка", "Reboot"), _("Перезагрузить сейчас?", "Reboot now?")):
+        os.system("reboot")
+
+if __name__ == "__main__":
+    check_root()
+    curses.wrapper(main)

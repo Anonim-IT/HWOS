@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# hwos-region — Переключение региона HWOS (Россия/Международный)
+set -euo pipefail
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'
+
+RUSSIAN_MIRRORLIST="## HWOS — Российские зеркала
+Server = https://mirror.yandex.ru/archlinux/\$repo/os/\$arch
+Server = https://archlinux.mirror.colo-serv.net/\$repo/os/\$arch
+Server = https://mirror.rackspace.com/archlinux/\$repo/os/\$arch"
+
+INTERNATIONAL_MIRRORLIST="## HWOS — Международные зеркала
+Server = https://archlinux.mirror.colo-serv.net/\$repo/os/\$arch
+Server = https://mirror.rackspace.com/archlinux/\$repo/os/\$arch
+Server = https://mirrors.kernel.org/archlinux/\$repo/os/\$arch"
+
+check_root() { [[ $EUID -eq 0 ]] || exec sudo "$0" "$@"; }
+
+set_russian() {
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}    ${WHITE}🇷🇺 РОССИЙСКИЙ РЕЖИМ${NC}                 ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+
+  echo -e "$RUSSIAN_MIRRORLIST" > /etc/pacman.d/mirrorlist
+  echo -e "${GREEN}[+] Установлены российские зеркала (Яндекс)${NC}"
+
+  echo "ru_RU.UTF-8 UTF-8" > /etc/locale.gen
+  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+  locale-gen 2>/dev/null
+  echo "LANG=ru_RU.UTF-8" > /etc/locale.conf
+  echo "KEYMAP=ru" > /etc/vconsole.conf
+  echo "FONT=cyr-sun16" >> /etc/vconsole.conf
+  echo -e "${GREEN}[+] Язык: русский, раскладка: ru${NC}"
+
+  sed -i 's/^HWOS_REGION=.*/HWOS_REGION="ru"/' /etc/os-release 2>/dev/null || true
+
+  echo -e "${YELLOW}[*] Часовой пояс: Европа/Москва${NC}"
+  echo -e "${GREEN}[+] HWOS переключён в российский режим${NC}"
+  echo -e "${WHITE}   Сделано в Санкт-Петербурге ❤️${NC}"
+}
+
+set_international() {
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}    ${WHITE}🌍 МЕЖДУНАРОДНЫЙ РЕЖИМ${NC}               ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+
+  echo -e "$INTERNATIONAL_MIRRORLIST" > /etc/pacman.d/mirrorlist
+  echo -e "${GREEN}[+] Установлены международные зеркала${NC}"
+
+  echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+  locale-gen 2>/dev/null
+  echo "LANG=en_US.UTF-8" > /etc/locale.conf
+  echo "KEYMAP=us" > /etc/vconsole.conf
+  echo "" >> /etc/vconsole.conf
+  echo -e "${GREEN}[+] Язык: английский, раскладка: us${NC}"
+
+  sed -i 's/^HWOS_REGION=.*/HWOS_REGION="int"/' /etc/os-release 2>/dev/null || true
+
+  echo -e "${GREEN}[+] HWOS переключён в международный режим${NC}"
+}
+
+status() {
+  echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║${NC}    ${WHITE}РЕГИОН HWOS${NC}                           ${CYAN}║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+  echo ""
+  echo -e "  ${CYAN}Система:${NC}  $(grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d= -f2- || echo 'HWOS')"
+  echo -e "  ${CYAN}Родина:${NC}   Санкт-Петербург 🇷🇺"
+  echo -e "  ${CYAN}Язык:${NC}     $(grep LANG /etc/locale.conf 2>/dev/null | cut -d= -f2- || echo 'не задан')"
+  echo -e "  ${CYAN}Регион:${NC}   $(grep HWOS_REGION /etc/os-release 2>/dev/null | cut -d= -f2- || echo 'ru')"
+  echo -e "  ${CYAN}Зеркала:${NC}"
+  head -3 /etc/pacman.d/mirrorlist 2>/dev/null | sed 's/^/    /'
+  echo ""
+  echo -e "  ${YELLOW}Сменить регион:${NC}"
+  echo -e "    sudo hwos-region ru  — 🇷🇺 Российский режим"
+  echo -e "    sudo hwos-region int — 🌍 Международный"
+}
+
+case "${1:-status}" in
+  ru|russian|rus|россия|рф)
+    check_root; set_russian ;;
+  int|international|world|мир)
+    check_root; set_international ;;
+  status) status ;;
+  help)
+    echo "Использование: hwos-region {ru|int|status}"
+    echo ""
+    echo "  ru     — 🇷🇺 Российский режим (русский язык, зеркала РФ, MSK)"
+    echo "  int    — 🌍 Международный (английский, глобальные зеркала)"
+    echo "  status — текущий регион" ;;
+  *) echo "Использование: hwos-region {ru|int|status}"; exit 1 ;;
+esac

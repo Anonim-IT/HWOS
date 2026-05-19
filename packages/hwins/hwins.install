@@ -1,5 +1,5 @@
 post_install() {
-    echo "Welcome to HWOS - Hacker Web OS"
+    echo "Добро пожаловать в HWOS — Hacker Web OS, Сделано в Санкт-Петербурге!"
     echo "Package manager 'hwins' installed."
     echo "Usage: hwins help"
     echo ""

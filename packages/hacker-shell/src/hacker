@@ -48,7 +48,8 @@ __hacker_prompt() {
         local exit_mark=""
     fi
 
-    PS1="\n${CYAN}╭─${NC}${user_host} ${CYAN}${time}${NC} ${dir}\n${CYAN}╰─${NC}${exit_mark}${GREEN}$ ${NC}"
+    local spb="${DIM}SPb${NC}"
+    PS1="\n${CYAN}╭─${NC}${user_host} ${CYAN}${time}${NC} ${dir} ${spb}\n${CYAN}╰─${NC}${exit_mark}${GREEN}$ ${NC}"
     PS2="${CYAN}→${NC} "
 }
 
@@ -120,7 +121,7 @@ __hacker_welcome() {
         if [[ ! -f "$HOME/.hacker_initialized" ]]; then
             echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
             echo -e "${CYAN}║${NC} ${WHITE}Welcome to Hacker Shell v${HACKER_VERSION}${NC}      ${CYAN}║${NC}"
-            echo -e "${CYAN}║${NC} ${GREEN}HWOS - Hacker Web OS${NC}                    ${CYAN}║${NC}"
+            echo -e "${CYAN}║${NC} ${GREEN}HWOS — Сделано в Санкт-Петербурге${NC}          ${CYAN}║${NC}"
             echo -e "${CYAN}║${NC}                                          ${CYAN}║${NC}"
             echo -e "${CYAN}║${NC} Type ${GREEN}hwos-help${NC} for available commands      ${CYAN}║${NC}"
             echo -e "${CYAN}║${NC} Type ${GREEN}hwfetch${NC} to show system info           ${CYAN}║${NC}"
@@ -132,13 +133,14 @@ __hacker_welcome() {
 
 __hacker_version() {
     echo "Hacker Shell v${HACKER_VERSION}"
-    echo "HWOS - Hacker Web OS"
+    echo "HWOS — Сделано в Санкт-Петербурге"
     echo "License: GPLv3"
 }
 
 __hacker_help() {
     cat << 'HELP'
-Hacker Shell - HWOS Custom Shell Environment
+Hacker Shell — HWOS Custom Shell Environment
+Сделано в Санкт-Петербурге
 
 Usage:
   hacker            Start interactive shell
@@ -157,13 +159,14 @@ Features:
   - ZSH/Bash compatible
 
 HWOS Commands:
-  hwins       - Package manager (wrapper around pacman)
-  hwos-update - System update tool
+  hwins        - Package manager (wrapper around pacman)
+  hwos-update  - System update tool
   hwos-firewall - Firewall manager (nftables)
   hwos-encrypt - Encryption manager (LUKS)
   hwos-installer - Dialog-based system installer
-  hwfetch     - System information (fastfetch themed)
-  hwos-help   - Full command reference
+  hwos-region  - Switch region (Russia/International)
+  hwfetch      - System information (fastfetch themed)
+  hwos-help    - Full command reference
 HELP
 }
 

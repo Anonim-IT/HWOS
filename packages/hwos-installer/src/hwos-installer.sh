@@ -1,91 +1,129 @@
 #!/usr/bin/env bash
-# hwos-installer — Установщик Hacker Web OS
-# Дружелюбный интерфейс для новичков на dialog
-# Версия: 1.0.0
-
+# hwos-installer — Установщик HWOS
 set -euo pipefail
+
+export DIALOGOPTS="--colors --backtitle 'HWOS Installer v1.0.0 — Сделано в Санкт-Петербурге'"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; WHITE='\033[1;37m'; NC='\033[0m'
-VERSION="1.0.0"
 
+# ============================================================
+# LANGUAGE HELPER
+# ============================================================
 L_() {
-  case "$LANG" in
-    ru|ru_RU*) echo "$1" ;;
-    *) echo "${2:-$1}" ;;
-  esac
+  if [[ "${LANG:-ru_RU.UTF-8}" == ru* ]]; then
+    echo "$1"
+  else
+    echo "${2:-$1}"
+  fi
 }
 
+# ============================================================
+# GLOBALS
+# ============================================================
+DISK=""
+USERNAME=""
+PASSWORD=""
+HOSTNAME="hwos"
+REGION="ru"
+
+# ============================================================
+# UTILITY
+# ============================================================
 check_root() { [[ $EUID -eq 0 ]] || exec sudo "$0" "$@"; }
 
-check_deps() {
-  for dep in dialog parted mkfs.ext4 mkfs.btrfs cryptsetup arch-chroot; do
-    command -v "$dep" &>/dev/null || {
-      echo -e "${RED}[!] Не найдена утилита: $dep${NC}"
-      echo -e "${YELLOW}[*] Установи: sudo pacman -S dialog parted btrfs-progs cryptsetup arch-install-scripts${NC}"
-      exit 1
-    }
-  done
+cleanup() {
+  rm -f /tmp/hwos_install_*.txt
 }
 
-show_logo() {
-  dialog --colors --title "HWOS Installer v$VERSION" \
-    --msgbox "\n\n\
-    ██╗  ██╗██╗    ██╗ ██████╗ ███████╗\n\
-    ██║  ██║██║    ██║██╔═══██╗██╔════╝\n\
-    ███████║██║ █╗ ██║██║   ██║███████╗\n\
-    ██╔══██║██║███╗██║██║   ██║╚════██║\n\
-    ██║  ██║╚███╔███╔╝╚██████╔╝███████║\n\
-    ╚═╝  ╚═╝ ╚══╝╚══╝  ╚═════╝ ╚══════╝\n\n\
-    $($(L_ "ДОБРО ПОЖАЛОВАТЬ В HWOS!" "WELCOME TO HWOS!"))\n\
-    $($(L_ "Hacker Web OS — простая и понятная система" "Hacker Web OS — simple and friendly"))\n\
-    $($(L_ "Нажмите OK, чтобы начать установку" "Press OK to begin installation"))\n\n\
-    $($(L_ "Совет: для установки используйте стрелки, Tab и Enter" "Tip: use arrows, Tab and Enter to navigate"))" 17 56
+# ============================================================
+# REGION SELECTION
+# ============================================================
+select_region() {
+  exec 3>&1
+  local choice=$(dialog --title "$($(L_ "Выбор региона" "Region Selection"))" \
+    --menu "$($(L_ "Выберите регион установки:" "Choose installation region:"))" \
+    12 50 2 \
+    "ru"  "$($(L_ "🇷🇺 Россия — русский язык, Яндекс-зеркала" "🇷🇺 Russia — Russian language, Yandex mirrors"))" \
+    "int" "$($(L_ "🌍 Международный — английский язык, глобальные зеркала" "🌍 International — English, global mirrors"))" \
+    2>&1 1>&3)
+  local ret=$?
+  exec 3>&-
+  if [[ $ret -eq 0 ]]; then
+    REGION="$choice"
+  fi
 }
 
+# ============================================================
+# LANGUAGE SELECTION
+# ============================================================
 select_language() {
-  LANG=$(dialog --clear --stdout \
-    --title "$($(L_ "Язык системы" "System Language"))" \
-    --menu "$($(L_ "Выберите язык установки:" "Select installation language:"))" \
-    10 45 2 \
-    "ru_RU.UTF-8" "🇷🇺 Русский — рекомендуется" \
-    "en_US.UTF-8" "🇬🇧 English")
-  export LANG
+  exec 3>&1
+  local choice=$(dialog --title "$($(L_ "Выбор языка установки" "Installation Language"))" \
+    --menu "$($(L_ "Выберите язык установщика:" "Choose the installer language:"))" \
+    10 50 2 \
+    "ru" "$($(L_ "Русский" "Russian"))" \
+    "en" "$($(L_ "English" "English"))" \
+    2>&1 1>&3)
+  local ret=$?
+  exec 3>&-
+  if [[ $ret -eq 0 ]]; then
+    if [[ "$choice" == "ru" ]]; then
+      export LANG=ru_RU.UTF-8
+    else
+      export LANG=en_US.UTF-8
+    fi
+  fi
 }
 
+# ============================================================
+# MODE SELECTION
+# ============================================================
 select_mode() {
-  MODE=$(dialog --clear --stdout \
-    --title "$($(L_ "Режим установки" "Installation Mode"))" \
-    --menu "$($(L_ "Выберите режим:" "Select mode:"))" \
+  exec 3>&1
+  local choice=$(dialog --title "$($(L_ "Режим установки" "Installation Mode"))" \
+    --menu "$($(L_ "Выберите режим:" "Choose a mode:"))" \
     12 55 2 \
-    "easy" "🌱 $(L_ "Для новичков — всё настроится само" "For beginners — automatic setup")" \
-    "expert" "🧑‍💻 $(L_ "Эксперт — ручная настройка каждого шага" "Expert — manual step-by-step")")
-  export MODE
+    "easy"   "$($(L_ "Для новичков — всё автоматически" "For beginners — everything is automatic"))" \
+    "expert" "$($(L_ "Эксперт — ручная настройка разделов" "Expert — manual partitioning"))" \
+    2>&1 1>&3)
+  local ret=$?
+  exec 3>&-
+  if [[ $ret -eq 0 ]]; then
+    MODE="$choice"
+  else
+    exit 1
+  fi
 }
 
+# ============================================================
+# DISK SELECTION
+# ============================================================
 select_disk() {
-  local disks=()
-  while IFS= read -r line; do
-    name=$(echo "$line" | awk '{print $4}')
-    size=$(echo "$line" | awk '{print $3}')
-    model=$(echo "$line" | cut -d' ' -f5-)
-    [[ -z "$name" || "$name" == "loop"* ]] && continue
-    disks+=("$name" "$model ($size)")
-  done < <(lsblk -d -o NAME,SIZE,TYPE,MODEL -n -p 2>/dev/null)
-
-  [[ ${#disks[@]} -eq 0 ]] && {
+  local disks=$(lsblk -dno NAME,SIZE,MODEL | awk '{print "/dev/" $1, $2, $3}' | tr '\n' ' ')
+  if [[ -z "$disks" ]]; then
     dialog --title "$($(L_ "Ошибка" "Error"))" \
       --msgbox "$($(L_ "Не найден ни один диск!" "No disks found!"))" 5 40
     exit 1
-  }
-
-  DISK=$(dialog --clear --stdout \
-    --title "$($(L_ "Выбор диска" "Disk Selection"))" \
-    --menu "$($(L_ "Выберите диск для установки (ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ):" "Select target disk (ALL DATA WILL BE WIPED):"))" \
-    15 60 5 "${disks[@]}")
-  export DISK
+  fi
+  exec 3>&1
+  local choice=$(dialog --title "$($(L_ "Выбор диска" "Select Disk"))" \
+    --menu "$($(L_ "Выберите диск для установки HWOS:" "Select a disk for HWOS installation:"))" \
+    15 55 4 \
+    $disks \
+    2>&1 1>&3)
+  local ret=$?
+  exec 3>&-
+  if [[ $ret -eq 0 ]]; then
+    DISK="$choice"
+  else
+    exit 1
+  fi
 }
 
+# ============================================================
+# AUTO PARTITION
+# ============================================================
 auto_partition() {
   dialog --title "$($(L_ "Авторазметка" "Auto Partition"))" \
     --infobox "$($(L_ "Выполняется автоматическая разметка диска... Это займёт несколько секунд." "Automatic partitioning in progress... This will take a few seconds."))" 5 50
@@ -122,306 +160,282 @@ Close cfdisk when done."))" 16 60
 select_partitions() {
   if [[ "$MODE" == "easy" ]]; then
     auto_partition
-    PART_BOOT="${DISK}1"
-    PART_SWAP="${DISK}2"
-    PART_ROOT="${DISK}3"
   else
     manual_partition
-    local parts=()
-    while IFS= read -r line; do
-      name=$(echo "$line" | awk '{print $4}')
-      size=$(echo "$line" | awk '{print $3}')
-      fstype=$(echo "$line" | awk '{print $5}')
-      parts+=("$name" "$fstype ($size)")
-    done < <(lsblk -o NAME,SIZE,FSTYPE -n -p "$DISK" 2>/dev/null | tail -n +2)
-
-    PART_BOOT=$(dialog --clear --stdout \
-      --title "$($(L_ "Выберите EFI раздел" "Select EFI partition"))" \
-      --menu "$($(L_ "Выберите раздел для /boot (ESP, fat32):" "Select partition for /boot (ESP, fat32):"))" \
-      12 50 3 "${parts[@]}")
-
-    PART_SWAP=$(dialog --clear --stdout \
-      --title "$($(L_ "Выберите swap раздел" "Select swap partition"))" \
-      --menu "$($(L_ "Выберите раздел для swap:" "Select swap partition:"))" \
-      12 50 3 "${parts[@]}")
-
-    PART_ROOT=$(dialog --clear --stdout \
-      --title "$($(L_ "Выберите корневой раздел" "Select root partition"))" \
-      --menu "$($(L_ "Выберите раздел для системы (/):" "Select root partition (/) :"))" \
-      12 50 3 "${parts[@]}")
-  fi
-  export PART_BOOT PART_SWAP PART_ROOT
-}
-
-select_filesystem() {
-  FSTYPE=$(dialog --clear --stdout \
-    --title "$($(L_ "Файловая система" "Filesystem"))" \
-    --menu "$($(L_ "Выберите тип файловой системы:" "Select filesystem type:"))" \
-    11 50 3 \
-    "btrfs" "BTRFS $(L_ "(рекомендуется, снимки)" "(recommended, snapshots)")" \
-    "ext4" "Ext4 $(L_ "(классическая, надёжная)" "(classic, reliable)")")
-  export FSTYPE
-}
-
-select_encryption() {
-  dialog --title "$($(L_ "Шифрование" "Encryption"))" \
-    --yesno "$($(L_ "Включить шифрование диска (LUKS)?
-Это защитит ваши данные паролем при загрузке.
-Рекомендуется для ноутбуков." "Enable full disk encryption (LUKS)?
-This will protect your data with a password at boot.
-Recommended for laptops."))" 9 55
-  ENCRYPT=$([ $? -eq 0 ] && echo "yes" || echo "no")
-  export ENCRYPT
-  if [[ "$ENCRYPT" == "yes" ]]; then
-    PASS1=$(dialog --clear --stdout \
-      --title "$($(L_ "Пароль шифрования" "Encryption Password"))" \
-      --insecure --passwordbox "$($(L_ "Придумайте пароль для шифрования диска:" "Create a disk encryption password:"))" 8 50)
-    PASS2=$(dialog --clear --stdout \
-      --title "$($(L_ "Подтверждение" "Confirm Password"))" \
-      --insecure --passwordbox "$($(L_ "Повторите пароль:" "Repeat password:"))" 8 50)
-    [[ "$PASS1" != "$PASS2" ]] && {
-      dialog --title "$($(L_ "Ошибка" "Error"))" \
-        --msgbox "$($(L_ "Пароли не совпадают! Попробуйте снова." "Passwords do not match! Try again."))" 5 45
-      select_encryption; return
-    }
-    LUKS_PASS="$PASS1"
-    export LUKS_PASS
   fi
 }
 
-select_hostname() {
-  HOSTNAME=$(dialog --clear --stdout \
-    --title "$($(L_ "Имя компьютера" "Hostname"))" \
-    --inputbox "$($(L_ "Введите имя компьютера (как он будет называться в сети):" "Enter computer name (hostname):"))" \
-    8 55 "hwos-pc")
-  HOSTNAME=${HOSTNAME:-hwos-pc}
-  export HOSTNAME
+# ============================================================
+# DETECT PARTITIONS
+# ============================================================
+detect_partitions() {
+  ESP=""
+  SWAP=""
+  ROOT=""
+  local parts=$(lsblk -nlo NAME,TYPE,SIZE,FSTYPE "$DISK" | grep part)
+  local part_name
+  while IFS= read -r line; do
+    part_name="/dev/$(echo $line | awk '{print $1}')"
+    local fstype=$(echo $line | awk '{print $4}')
+    local size=$(echo $line | awk '{print $3}')
+    if echo "$line" | grep -qi "fat\|vfat\|esp" || [[ "$fstype" == "vfat" ]] || [[ "$fstype" == "fat32" ]]; then
+      ESP="$part_name"
+    elif [[ -z "$SWAP" ]] && (echo "$line" | grep -qi "swap" || [[ "$fstype" == "swap" ]]); then
+      SWAP="$part_name"
+    elif [[ -z "$ROOT" ]]; then
+      ROOT="$part_name"
+    fi
+  done <<< "$parts"
+  if [[ -z "$ESP" ]]; then
+    ESP=$(lsblk -nlo NAME "$DISK" | head -2 | tail -1)
+    ESP="/dev/$ESP"
+  fi
+  if [[ -z "$ROOT" ]]; then
+    ROOT=$(lsblk -nlo NAME "$DISK" | tail -1)
+    ROOT="/dev/$ROOT"
+  fi
 }
 
-create_user() {
-  USERNAME=$(dialog --clear --stdout \
-    --title "$($(L_ "Пользователь" "User Account"))" \
-    --inputbox "$($(L_ "Придумайте имя пользователя (латиницей):" "Enter username (latin letters):"))" \
-    8 55 "user")
-  USERNAME=${USERNAME:-user}
+# ============================================================
+# FORMAT PARTITIONS
+# ============================================================
+format_partitions() {
+  dialog --title "$($(L_ "Форматирование" "Formatting"))" \
+    --yesno "$($(L_ "Форматировать разделы?
+  ESP:  $ESP
+  ROOT: $ROOT
 
-  PASS1=$(dialog --clear --stdout \
-    --title "$($(L_ "Пароль пользователя" "User Password"))" \
-    --insecure --passwordbox "$($(L_ "Придумайте пароль для" "Create password for")) $USERNAME:" 8 50)
-  PASS2=$(dialog --clear --stdout \
-    --title "$($(L_ "Подтверждение" "Confirm Password"))" \
-    --insecure --passwordbox "$($(L_ "Повторите пароль:" "Repeat password:"))" 8 50)
-  [[ "$PASS1" != "$PASS2" ]] && {
-    dialog --title "$($(L_ "Ошибка" "Error"))" --msgbox "$($(L_ "Пароли не совпадают!" "Passwords do not match!"))" 5 40
-    create_user; return
-  }
-  USER_PASS="$PASS1"
-  export USERNAME USER_PASS
+Все данные на этих разделах будут УНИЧТОЖЕНЫ!" "Format partitions?
+  ESP:  $ESP
+  ROOT: $ROOT
+
+ALL data on these partitions will be DESTROYED!"))" 10 60
+  [[ $? -ne 0 ]] && exit 1
+
+  mkfs.fat -F32 "$ESP" 2>/dev/null
+  mkfs.ext4 -F "$ROOT" 2>/dev/null
+
+  if [[ -n "$SWAP" ]]; then
+    mkswap "$SWAP" 2>/dev/null || true
+  fi
 }
 
-select_wm() {
-  WM=$(dialog --clear --stdout \
-    --title "$($(L_ "Рабочее окружение" "Window Manager"))" \
-    --menu "$($(L_ "Выберите удобное для вас окружение:" "Select your preferred environment:"))" \
-    14 55 4 \
-    "hyprland" "🖥️ Hyprland $(L_ "(красивый, современный)" "(beautiful, modern)")" \
-    "sway" "🖥️ Sway $(L_ "(простой, как i3)" "(simple, like i3)")" \
-    "i3" "🖥️ i3 $(L_ "(классический тайлинг)" "(classic tiling)")" \
-    "none" "📟 $(L_ "Только консоль (без графики)" "CLI only (no graphics)"))")
-  export WM
+# ============================================================
+# MOUNT
+# ============================================================
+mount_partitions() {
+  mount "$ROOT" /mnt
+  mkdir -p /mnt/boot
+  mount "$ESP" /mnt/boot
+  if [[ -n "$SWAP" ]]; then
+    swapon "$SWAP" 2>/dev/null || true
+  fi
 }
 
-select_timezone() {
-  TZONE=$(dialog --clear --stdout \
-    --title "$($(L_ "Часовой пояс" "Timezone"))" \
-    --menu "$($(L_ "Выберите ваш часовой пояс:" "Select your timezone:"))" \
-    12 45 4 \
-    "Europe/Moscow" "🇷🇺 Москва (MSK)" \
-    "Europe/Kaliningrad" "🇷🇺 Калининград" \
-    "Asia/Yekaterinburg" "🇷🇺 Екатеринбург" \
-    "UTC" "🌐 UTC")
-  TZONE=${TZONE:-Europe/Moscow}
-  export TZONE
+# ============================================================
+# USER INPUT
+# ============================================================
+get_user_info() {
+  exec 3>&1
+  USERNAME=$(dialog --title "$($(L_ "Пользователь" "User Account"))" \
+    --inputbox "$($(L_ "Введите имя пользователя:" "Enter username:"))" 8 50 "user" \
+    2>&1 1>&3)
+  local ret=$?
+  exec 3>&-
+  [[ $ret -ne 0 ]] && exit 1
+
+  exec 3>&1
+  PASSWORD=$(dialog --title "$($(L_ "Пользователь" "User Account"))" \
+    --passwordbox "$($(L_ "Введите пароль:" "Enter password:"))" 8 50 \
+    2>&1 1>&3)
+  ret=$?
+  exec 3>&-
+  [[ $ret -ne 0 ]] && exit 1
+
+  exec 3>&1
+  HOSTNAME=$(dialog --title "$($(L_ "Имя компьютера" "Hostname"))" \
+    --inputbox "$($(L_ "Введите имя компьютера:" "Enter hostname:"))" 8 50 "hwos" \
+    2>&1 1>&3)
+  ret=$?
+  exec 3>&-
+  [[ $ret -ne 0 ]] && HOSTNAME="hwos"
 }
 
-install_system() {
-  (
-  echo "5"
-  echo "XXX"; echo "$($(L_ "Подготовка разделов..." "Preparing partitions..."))"; echo "XXX"
+# ============================================================
+# INSTALLATION
+# ============================================================
+run_pacstrap() {
+  local packages="base base-devel linux-hacker linux-hacker-headers linux-firmware grub efibootmgr networkmanager dhcpcd nano vim sudo dialog hwins hackerrub hwos-scripts hwos-configs hwos-theme"
 
-  # Format
-  mkfs.fat -F32 "$PART_BOOT" 2>/dev/null
-  mkswap "$PART_SWAP" 2>/dev/null
-  swapon "$PART_SWAP" 2>/dev/null
 
-  if [[ "$ENCRYPT" == "yes" ]]; then
-    echo -n "$LUKS_PASS" | cryptsetup luksFormat --type luks2 "$PART_ROOT" 2>/dev/null
-    echo -n "$LUKS_PASS" | cryptsetup open "$PART_ROOT" hwos_root 2>/dev/null
-    ROOT_DEV="/dev/mapper/hwos_root"
+  if [[ "$REGION" == "ru" ]]; then
+    packages="$packages ttf-liberation ttf-dejavu noto-fonts noto-fonts-emoji"
+  fi
+
+  dialog --title "$($(L_ "Установка" "Installation"))" \
+    --infobox "$($(L_ "Установка HWOS в $ROOT... Это займёт некоторое время." "Installing HWOS to $ROOT... This will take a while."))" 5 50
+
+  if [[ "$REGION" == "ru" ]]; then
+    cat > /mnt/etc/pacman.d/mirrorlist << 'MIRRORS'
+## HWOS — Российские зеркала
+Server = https://mirror.yandex.ru/archlinux/$repo/os/$arch
+Server = https://archlinux.mirror.colo-serv.net/$repo/os/$arch
+Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
+MIRRORS
   else
-    ROOT_DEV="$PART_ROOT"
+    cat > /mnt/etc/pacman.d/mirrorlist << 'MIRRORS'
+## HWOS — Международные зеркала
+Server = https://archlinux.mirror.colo-serv.net/$repo/os/$arch
+Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
+Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch
+MIRRORS
   fi
 
-  echo "15"
-  echo "XXX"; echo "$($(L_ "Форматирование..." "Formatting..."))"; echo "XXX"
+  pacstrap -K /mnt $packages 2>&1 | dialog --title "$($(L_ "Установка" "Installation"))" \
+    --progressbox "$($(L_ "Установка пакетов..." "Installing packages..."))" 20 70
 
-  case "$FSTYPE" in
-    btrfs)
-      mkfs.btrfs -f "$ROOT_DEV" 2>/dev/null
-      mount "$ROOT_DEV" /mnt
-      btrfs subvolume create /mnt/@ 2>/dev/null
-      btrfs subvolume create /mnt/@home 2>/dev/null
-      btrfs subvolume create /mnt/@snapshots 2>/dev/null
-      umount /mnt
-      mount -o compress=zstd,subvol=@ "$ROOT_DEV" /mnt
-      mkdir -p /mnt/{home,.snapshots,boot}
-      mount -o compress=zstd,subvol=@home "$ROOT_DEV" /mnt/home
-      mount -o compress=zstd,subvol=@snapshots "$ROOT_DEV" /mnt/.snapshots
-      ;;
-    ext4)
-      mkfs.ext4 -F "$ROOT_DEV" 2>/dev/null
-      mount "$ROOT_DEV" /mnt
-      mkdir -p /mnt/boot
-      ;;
-  esac
+  return ${PIPESTATUS[0]}
+}
 
-  mount "$PART_BOOT" /mnt/boot
-
-  echo "30"
-  echo "XXX"; echo "$($(L_ "Установка системы... (может занять 5-10 минут)" "Installing system... (5-10 minutes)"))"; echo "XXX"
-
-  pacstrap -K /mnt base base-devel linux linux-firmware \
-    amd-ucode intel-ucode \
-    grub efibootmgr networkmanager iwd \
-    "$WM" sddm pipewire pipewire-pulse wireplumber \
-    nftables fastfetch zsh git \
-    hwins hwos-scripts hwos-configs hwos-theme hwos-installer hacker-shell 2>/dev/null
-
-  echo "60"
-  echo "XXX"; echo "$($(L_ "Настройка системы..." "Configuring system..."))"; echo "XXX"
-
+configure_system() {
   genfstab -U /mnt >> /mnt/etc/fstab
 
-  arch-chroot /mnt /bin/bash <<CHROOT
-ln -sf "/usr/share/zoneinfo/$TZONE" /etc/localtime
-hwclock --systohc
+  cat > /mnt/etc/locale.gen << 'LOCALE'
+ru_RU.UTF-8 UTF-8
+en_US.UTF-8 UTF-8
+LOCALE
 
-sed -i 's/^#ru_RU.UTF-8/ru_RU.UTF-8/' /etc/locale.gen
-sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-locale-gen
+  if [[ "$REGION" == "ru" ]]; then
+    echo "LANG=ru_RU.UTF-8" > /mnt/etc/locale.conf
+    echo "KEYMAP=ru" > /mnt/etc/vconsole.conf
+    echo "FONT=cyr-sun16" >> /mnt/etc/vconsole.conf
+    arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime 2>/dev/null || true
+  else
+    echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
+    echo "KEYMAP=us" > /mnt/etc/vconsole.conf
+    echo "" >> /mnt/etc/vconsole.conf
+    arch-chroot /mnt ln -sf /usr/share/zoneinfo/UTC /etc/localtime 2>/dev/null || true
+  fi
 
-echo "LANG=ru_RU.UTF-8" > /etc/locale.conf
-echo "KEYMAP=ru" > /etc/vconsole.conf
-echo "FONT=cyr-sun16" >> /etc/vconsole.conf
+  arch-chroot /mnt locale-gen 2>/dev/null || true
+  echo "$HOSTNAME" > /mnt/etc/hostname
 
-echo "$HOSTNAME" > /etc/hostname
-cat > /etc/hosts << HOSTS
+  cat > /mnt/etc/hosts << 'HOSTS'
 127.0.0.1   localhost
 ::1         localhost
-127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
+127.0.1.1   HOSTNAME_PLACEHOLDER
 HOSTS
+  sed -i "s/HOSTNAME_PLACEHOLDER/$HOSTNAME/" /mnt/etc/hosts
 
-systemctl enable NetworkManager
-systemctl enable iwd
-systemctl enable sddm
-systemctl enable bluetooth
-systemctl enable fstrim.timer
+  arch-chroot /mnt useradd -m -G wheel,audio,video,storage -s /bin/bash "$USERNAME" 2>/dev/null || true
+  echo "$USERNAME:$PASSWORD" | arch-chroot /mnt chpasswd
+  echo "root:root" | arch-chroot /mnt chpasswd
 
-echo "root:$USER_PASS" | chpasswd
-useradd -m -G wheel,audio,video,network,storage -s /usr/bin/hacker "$USERNAME" 2>/dev/null
-echo "$USERNAME:$USER_PASS" | chpasswd
-sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+  echo "%wheel ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers.d/wheel
+  chmod 440 /mnt/etc/sudoers.d/wheel
 
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=HackerRUB 2>/dev/null
-grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null
+  arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=HackerRUB --recheck 2>/dev/null || true
 
-hwos-setup-fastfetch 2>/dev/null
-CHROOT
+  cat > /mnt/etc/default/grub << 'GRUB'
+# HWOS — GRUB configuration
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="HWOS"
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet nowatchdog"
+GRUB_CMDLINE_LINUX=""
+GRUB_PRELOAD_MODULES="part_gpt part_msdos"
+GRUB_TERMINAL_OUTPUT="gfxterm"
+GRUB_GFXMODE="1920x1080,1280x720,auto"
+GRUB_GFXPAYLOAD_LINUX="keep"
+GRUB_THEME="/boot/grub/themes/hackerrub/theme.txt"
+GRUB_DISABLE_OS_PROBER=false
+GRUB_ENABLE_CRYPTODISK=n
+GRUB_DISABLE_RECOVERY=true
+GRUB_SAVEDEFAULT=true
+GRUB_FONT="/boot/grub/fonts/hack.pf2"
+GRUB_COLOR_NORMAL="white/black"
+GRUB_COLOR_HIGHLIGHT="blue/black"
+GRUB_BADRAM="0x0,0x0"
+GRUB_TIMEOUT_STYLE=menu
+GRUB_INIT_TUNE="480 440 1"
+GRUB_DISTRIBUTOR_ICON="hwos"
+GRUB_BOOT_MENU_ENTRIES="auto"
+GRUB_DISABLE_SUBMENU=y
+GRUB_DISABLE_LINUX_UUID=false
+GRUB_DISABLE_LINUX_PARTUUID=false
+GRUB_VIDEO_BACKEND="efi_uga,efi_gop"
+GRUB_GFXPAYLOAD="keep"
+GRUB_SERIAL_COMMAND="serial"
+GRUB_TERMINAL_INPUT="console,serial"
+GRUB_CMDLINE_NET=""
+GRUB_HIDDEN_TIMEOUT=""
+GRUB_HIDDEN_TIMEOUT_QUIET=false
+GRUB_RECORDFAIL_TIMEOUT=-1
+GRUB_DISABLE_OS_PROBER_DEFAULT=false
+GRUB_SAVEDEFAULT=true
+GRUB_THEME="/boot/grub/themes/hackerrub/theme.txt"
+GRUB_DISTRIBUTOR="HWOS — Сделано в Санкт-Петербурге"
+GRUB_TIMEOUT_STYLE=menu
+GRUB_TIMEOUT=5
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet nowatchdog mitigations=auto spectre_v2=on spec_store_bypass_disable=on"
 
-  echo "90"
-  echo "XXX"; echo "$($(L_ "Завершение..." "Finalizing..."))"; echo "XXX"
+if [ -f ${config_directory}/custom.cfg ]; then
+  . ${config_directory}/custom.cfg
+fi
+GRUB
 
-  umount -R /mnt 2>/dev/null || true
+  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
 
-  echo "100"
-  echo "XXX"; echo "$($(L_ "Установка завершена!" "Installation complete!"))"; echo "XXX"
-  ) | dialog --title "$($(L_ "Установка HWOS" "Installing HWOS"))" \
-    --gauge "$($(L_ "Подготовка..." "Preparing..."))" 8 60 0
+  arch-chroot /mnt systemctl enable NetworkManager 2>/dev/null || true
+  arch-chroot /mnt systemctl enable systemd-timesyncd 2>/dev/null || true
 }
 
-summary() {
-  local enc_str=$([ "$ENCRYPT" == "yes" ] && \
-    echo "$($(L_ "Да (LUKS)" "Yes (LUKS)"))" || \
-    echo "$($(L_ "Нет" "No"))")
-  dialog --title "$($(L_ "Установка завершена!" "Installation Complete!"))" \
-    --msgbox "$($(L_ "\
-    УСТАНОВКА HWOS ЗАВЕРШЕНА!\n\n\
-    Диск: $DISK\n\
-    Файловая система: $FSTYPE\n\
-    Шифрование: $enc_str\n\
-    Окружение: $WM\n\
-    Пользователь: $USERNAME\n\
-    Часовой пояс: $TZONE\n\n\
-    После перезагрузки вас встретит:\n\
-    • Русскоязычный интерфейс\n\
-    • Готовый к работе Hyprland/i3/Sway\n\
-    • Hacker Shell — удобная оболочка\n\
-    • Все драйверы и кодеки" "\
-    HWOS INSTALLATION COMPLETE!\n\n\
-    Disk: $DISK\n\
-    Filesystem: $FSTYPE\n\
-    Encryption: $enc_str\n\
-    WM: $WM\n\
-    User: $USERNAME\n\
-    Timezone: $TZONE\n\n\
-    After reboot you will get:\n\
-    • Russian interface\n\
-    • Ready-to-use Hyprland/i3/Sway\n\
-    • Hacker Shell\n\
-    • All drivers and codecs"))" 20 60
+final_message() {
+  dialog --title "$($(L_ "Установка завершена" "Installation Complete"))" \
+    --msgbox "$($(L_ "HWOS установлена!
+Регион: $REGION
+Пользователь: $USERNAME
+
+После перезагрузки вы попадёте в HWOS.
+
+Сделано в Санкт-Петербурге ❤️" "HWOS is installed!
+Region: $REGION
+User: $USERNAME
+
+After reboot you'll be in HWOS.
+
+Made in Saint Petersburg ❤️"))" 12 50
 }
 
+# ============================================================
+# MAIN
+# ============================================================
 main() {
   check_root
-  check_deps
+  cleanup
+  trap cleanup EXIT
 
-  show_logo
+  select_region
   select_language
   select_mode
-
-  dialog --title "$($(L_ "Подготовка" "Preparation"))" \
-    --yesno "$($(L_ "Перед установкой убедитесь, что вы:\n\
-  1. Подключены к интернету\n\
-  2. Сделали бэкап важных данных\n\
-  3. Зарядили ноутбук от сети (если это ноутбук)\n\n\
-Продолжить установку?" "Before installation, make sure:\n\
-  1. You are connected to the internet\n\
-  2. You backed up your important data\n\
-  3. Your laptop is plugged in (if laptop)\n\n\
-Continue installation?"))" 12 55 || exit 1
-
   select_disk
   select_partitions
-  select_filesystem
-  select_encryption
-  select_hostname
-  create_user
-  select_wm
-  select_timezone
+  detect_partitions
+  format_partitions
+  mount_partitions
+  get_user_info
 
-  dialog --title "$($(L_ "Подтверждение" "Confirmation"))" \
-    --yesno "$($(L_ "Готовы к установке HWOS на $DISK?\n\n\
-ВСЕ ДАННЫЕ НА ДИСКЕ БУДУТ УДАЛЕНЫ!" "Ready to install HWOS on $DISK?\n\n\
-ALL DATA ON THIS DISK WILL BE WIPED!"))" 8 55
-  case $? in
-    0) install_system ;;
-    1) dialog --title "$($(L_ "Отмена" "Cancelled"))" \
-      --msgbox "$($(L_ "Установка отменена." "Installation cancelled."))" 5 45; exit 1 ;;
-  esac
+  run_pacstrap || {
+    dialog --title "$($(L_ "Ошибка" "Error"))" \
+      --msgbox "$($(L_ "Установка не удалась. Проверьте подключение к интернету." "Installation failed. Check your internet connection."))" 6 50
+    exit 1
+  }
 
-  summary
-  dialog --title "$($(L_ "Перезагрузка" "Reboot"))" \
-    --yesno "$($(L_ "Перезагрузить компьютер сейчас?" "Reboot now?"))" 5 40
+  configure_system
+  final_message
+
+  dialog --title "$($(L_ "Готово" "Done"))" \
+    --yesno "$($(L_ "Перезагрузить сейчас?" "Reboot now?"))" 6 40
   [[ $? -eq 0 ]] && reboot
 }
 

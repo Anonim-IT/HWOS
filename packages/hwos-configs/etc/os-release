@@ -1,5 +1,5 @@
 NAME="HWOS"
-PRETTY_NAME="Hacker Web OS — просто и понятно"
+PRETTY_NAME="Hacker Web OS — Сделано в Санкт-Петербурге"
 VERSION="1.0.0"
 VERSION_ID="1.0.0"
 ID=hwos
@@ -10,3 +10,6 @@ HOME_URL="https://github.com/Anonim-IT/HWOS"
 SUPPORT_URL="https://github.com/Anonim-IT/HWOS/issues"
 BUG_REPORT_URL="https://github.com/Anonim-IT/HWOS/issues"
 LOGO=hwos
+PRIVACY_POLICY_URL="https://github.com/Anonim-IT/HWOS"
+HWOS_REGION="ru"
+HWOS_HOMETOWN="Saint Petersburg"

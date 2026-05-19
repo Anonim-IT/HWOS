@@ -45,6 +45,13 @@ echo -e "  ${GREEN}hwos-encrypt${NC}   ${DIM}container${NC}  Создать ко
 echo -e "  ${GREEN}hwos-encrypt${NC}   ${DIM}status${NC}     Статус шифрования\n"
 
 echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  🌍 РЕГИОН${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
+echo -e "  ${GREEN}hwos-region${NC}    ${DIM}status${NC}    Текущий регион"
+echo -e "  ${GREEN}hwos-region${NC}    ${DIM}ru${NC}        🇷🇺 Россия (русский, Яндекс)"
+echo -e "  ${GREEN}hwos-region${NC}    ${DIM}int${NC}       🌍 Международный (английский)\n"
+
+echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
 echo -e "${YELLOW}  💿 УСТАНОВКА${NC}"
 echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
 echo -e "  ${GREEN}hwos-installer${NC}           Запустить установщик\n"
@@ -72,4 +79,5 @@ echo -e "  ${DIM}hwhelp    = эта справка${NC}"
 echo -e "  ${DIM}hwelcome  = приветствие HWOS${NC}\n"
 
 echo -e "${CYAN}💡 HWOS — это просто! ${DIM}Наберите любую команду и наслаждайтесь.${NC}"
+echo -e "${CYAN}🏙️ Сделано в Санкт-Петербурге ❤️${NC}"
 echo -e "${CYAN}🌐 ${DIM}GitHub: https://github.com/Anonim-IT/HWOS${NC}"
